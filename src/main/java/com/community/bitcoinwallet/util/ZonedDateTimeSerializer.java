@@ -19,7 +19,7 @@ public class ZonedDateTimeSerializer extends StdSerializer<ZonedDateTime> {
 
     @Override
     public void serialize(ZonedDateTime value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-        gen.writeStringField("datetime", datetimeToString(value));
+        gen.writeString(datetimeToString(value));
     }
 
     public static String datetimeToString(ZonedDateTime ts) {

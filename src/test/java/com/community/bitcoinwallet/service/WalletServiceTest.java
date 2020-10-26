@@ -63,17 +63,18 @@ public class WalletServiceTest {
     public void shouldComputeBalanceForAGivenTimeFrame() {
         Instant instant = addEntries(false);
         Instant nextHour = instant.plusSeconds(3600);
+        Instant nextHour2 = nextHour.plusSeconds(3600);
         Assertions.assertThat(service.getBalance(instant, nextHour))
             .isEqualTo(
-                Collections.singletonList(walletEntry(instant, "100.40")));
+                Collections.singletonList(walletEntry(nextHour, "100.40")));
 
-        Instant nextTwoHours = nextHour.plusSeconds(3600);
-        Assertions.assertThat(service.getBalance(instant, nextTwoHours))
+        Instant nextHour3 = nextHour2.plusSeconds(3600);
+        Assertions.assertThat(service.getBalance(instant, nextHour3))
             .isEqualTo(
-                Arrays.asList(walletEntry(instant, "100.40"),
-                    walletEntry(nextHour, "50.20")));
+                Arrays.asList(walletEntry(nextHour, "100.40"),
+                    walletEntry(nextHour2, "50.20")));
 
-        Assertions.assertThat(service.getBalance(nextTwoHours, nextTwoHours.plusSeconds(3600)))
+        Assertions.assertThat(service.getBalance(nextHour3, nextHour3.plusSeconds(3600)))
             .isEqualTo(Collections.emptyList());
     }
 
@@ -84,13 +85,13 @@ public class WalletServiceTest {
 
         Assertions.assertThat(service.getBalance(prevHour, instant))
             .isEqualTo(
-                Collections.singletonList(walletEntry(prevHour, "100.40")));
+                Collections.singletonList(walletEntry(instant, "100.40")));
 
         Instant prevTwoHours = prevHour.minusSeconds(3600);
         Assertions.assertThat(service.getBalance(prevTwoHours, instant))
             .isEqualTo(
-                Arrays.asList(walletEntry(prevTwoHours, "25.10"),
-                    walletEntry(prevHour, "100.40")));
+                Arrays.asList(walletEntry(prevHour, "25.10"),
+                    walletEntry(instant, "100.40")));
 
         Assertions.assertThat(service.getBalance(prevTwoHours.minusSeconds(3600), prevTwoHours))
             .isEqualTo(Collections.emptyList());
@@ -107,9 +108,9 @@ public class WalletServiceTest {
         Assertions.assertThat(service.getBalance(Instant.parse("2020-10-01T10:00:00.000Z"),
             Instant.parse("2020-10-01T16:00:00.000Z")))
             .isEqualTo(
-                Arrays.asList(walletEntry(Instant.parse("2020-10-01T11:00:00.000Z"), "50.20"),
-                    walletEntry(Instant.parse("2020-10-01T13:00:00.000Z"), "25.10"),
-                    walletEntry(Instant.parse("2020-10-01T14:00:00.000Z"), "25.10")));
+                Arrays.asList(walletEntry(Instant.parse("2020-10-01T12:00:00.000Z"), "50.20"),
+                    walletEntry(Instant.parse("2020-10-01T14:00:00.000Z"), "25.10"),
+                    walletEntry(Instant.parse("2020-10-01T15:00:00.000Z"), "25.10")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {

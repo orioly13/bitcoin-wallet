@@ -20,7 +20,6 @@ public class H2JdbcConfig {
     @Value("${spring.datasource.password}")
     private String password;
 
-
     @Bean
     public NamedParameterJdbcTemplate h2NamedParameterJdbcTemplate() {
         return new NamedParameterJdbcTemplate(h2DataSource());

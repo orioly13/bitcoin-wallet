@@ -20,14 +20,13 @@ public class RepositoryConfig {
         this.h2JdbcConfig = h2JdbcConfig;
     }
 
-
-    @Bean("walletReporitory")
+    @Bean("walletRepository")
     @Profile("in-memory")
     public WalletRepository walletRepositoryInMemory() {
         return new InMemoryWalletRepository();
     }
 
-    @Bean("walletReporitory")
+    @Bean("walletRepository")
     @Profile("h2")
     public WalletRepository walletRepositoryH2() {
         return new H2WalletRepository(h2JdbcConfig.h2NamedParameterJdbcTemplate());

@@ -44,7 +44,7 @@ public class WalletService {
 
     private List<WalletEntry> groupAmountsByHour(Collection<WalletEntry> entries) {
         Map<Instant, BigDecimal> groupedByHour = entries.stream()
-            .map(walletEntry -> new WalletEntry(atStartOfHour(walletEntry.getDatetime()), walletEntry.getAmount()))
+            .map(walletEntry -> new WalletEntry(atEndOfHour(walletEntry.getDatetime()), walletEntry.getAmount()))
             .collect(Collectors.groupingBy(WalletEntry::getDatetime, LinkedHashMap::new,
                 Collectors.reducing(BigDecimal.ZERO, WalletEntry::getAmount, BigDecimal::add)));
         return groupedByHour.entrySet()

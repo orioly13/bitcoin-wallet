@@ -30,9 +30,9 @@ public class WalletController {
 
     private static final GeneralResponseData ERROR_RESPONSE =
         new GeneralResponseData(Status.INTERNAL_ERROR, "Something went wrong");
-    private static final GeneralResponseData OK_RESPONSE =
+    public static final GeneralResponseData OK_RESPONSE =
         new GeneralResponseData(Status.OK, "All good!");
-    private static final GeneralResponseData WRONG_JSON_RESPONSE =
+    public static final GeneralResponseData WRONG_JSON_RESPONSE =
         new GeneralResponseData(Status.CLIENT_ERROR, "Wrong JSON!");
 
     WalletService walletService;
@@ -43,7 +43,7 @@ public class WalletController {
     public GeneralResponseData addEntry(@RequestBody AddWalletEntryRequest entryRequest) {
         if (entryRequest == null || entryRequest.getDatetime() == null ||
             entryRequest.getAmount() == null) {
-            throw new IllegalArgumentException("Entry should not have null fields " + entryRequest);
+            throw new IllegalArgumentException("Request should not have null fields");
         }
         walletService.addEntry(
             new WalletEntry(entryRequest.getDatetime().toInstant(),
@@ -56,7 +56,7 @@ public class WalletController {
     public List<WalletEntryResponse> getBalance(@RequestBody BalanceRequest balanceRequest) {
         if (balanceRequest == null || balanceRequest.getFrom() == null ||
             balanceRequest.getTo() == null) {
-            throw new IllegalArgumentException("Entry should not have null fields " + balanceRequest);
+            throw new IllegalArgumentException("Request should not have null fields");
         }
         List<WalletEntry> entries = walletService.getBalance(
             balanceRequest.getFrom().toInstant(),
