@@ -13,7 +13,6 @@ import java.util.Collections;
 
 public class WalletServiceTest {
 
-
     private static final int COUNT_ENTRIES = 6;
     private static final int QUARTER_OF_HOUR_SECONDS = 15 * 60;
 
@@ -95,6 +94,22 @@ public class WalletServiceTest {
 
         Assertions.assertThat(service.getBalance(prevTwoHours.minusSeconds(3600), prevTwoHours))
             .isEqualTo(Collections.emptyList());
+    }
+
+    @Test
+    public void shouldSkipHoursWithoutBalance() {
+        BigDecimal amount = new BigDecimal("25.10");
+        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T11:00:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T11:30:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T13:00:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T14:15:00.000Z"), amount));
+
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-10-01T10:00:00.000Z"),
+            Instant.parse("2020-10-01T16:00:00.000Z")))
+            .isEqualTo(
+                Arrays.asList(walletEntry(Instant.parse("2020-10-01T11:00:00.000Z"), "50.20"),
+                    walletEntry(Instant.parse("2020-10-01T13:00:00.000Z"), "25.10"),
+                    walletEntry(Instant.parse("2020-10-01T14:00:00.000Z"), "25.10")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {

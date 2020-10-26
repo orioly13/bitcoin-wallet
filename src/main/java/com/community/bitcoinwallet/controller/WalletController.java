@@ -1,4 +1,4 @@
-package com.community.bitcoinwallet.api;
+package com.community.bitcoinwallet.controller;
 
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.model.requests.AddWalletEntryRequest;
