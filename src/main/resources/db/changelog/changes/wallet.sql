@@ -2,7 +2,7 @@
 
 --changeset prediger:create_wallet
 CREATE SEQUENCE SEQ_ID;
-CREATE TABLE WALLLET(
+CREATE TABLE PUBLIC.WALLET(
    ID bigint default SEQ_ID.nextval primary key,
    TS bigint not null,
    DOLLARS bigint not null,
@@ -10,4 +10,4 @@ CREATE TABLE WALLLET(
 );
 
 --changeset prediger:create_wallet_timestamp_index
-CREATE INDEX WALLET_BY_TS_IDX ON WALLLET(TS);
+CREATE INDEX WALLET_BY_TS_IDX ON WALLET(TS);
