@@ -8,10 +8,12 @@ import com.community.bitcoinwallet.model.response.GeneralResponseData;
 import com.community.bitcoinwallet.model.response.Status;
 import com.community.bitcoinwallet.model.response.WalletEntryResponse;
 import com.community.bitcoinwallet.repository.WalletRepository;
+import com.community.bitcoinwallet.service.WalletService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import liquibase.pro.packaged.B;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.community.bitcoinwallet.controller.AbstractController.INTERNAL_ERROR_RESPONSE;
 import static com.community.bitcoinwallet.controller.WalletController.OK_RESPONSE;
 import static com.community.bitcoinwallet.controller.WalletController.WRONG_JSON_RESPONSE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -52,7 +56,16 @@ class WalletControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
+    private WalletController controller;
+    @Autowired
+    private WalletService service;
+    @Autowired
     private WalletRepository repository;
+
+    @BeforeEach
+    public void setUp() {
+        ReflectionTestUtils.setField(controller, "walletService", service);
+    }
 
 
     @Test
@@ -91,6 +104,16 @@ class WalletControllerTest {
         Assertions.assertThat(readJson(mvcResult, GeneralResponseData.class))
             .isEqualTo(new GeneralResponseData(Status.CLIENT_ERROR,
                 "Amount is negative in entry:WalletEntry(datetime=2020-10-20T12:00:00Z, amount=-10.10)"));
+    }
+
+    @Test
+    public void addEntryShouldReturnServerErrorIfServiceIsUnavailable() throws Exception {
+        ReflectionTestUtils.setField(controller, "walletService", null);
+        MvcResult mvcResult = postJsonServerError(ENTRY,
+            new AddWalletEntryRequest(Instant.parse("2020-10-20T12:00:00Z")
+                .atZone(ZoneOffset.UTC), 10.1));
+        Assertions.assertThat(readJson(mvcResult, GeneralResponseData.class))
+            .isEqualTo(INTERNAL_ERROR_RESPONSE);
     }
 
     @Test
@@ -188,6 +211,16 @@ class WalletControllerTest {
                 "From and to should be in different hours: from=2020-10-11T10:30:00Z;to=2020-10-11T10:45:00Z"));
     }
 
+    @Test
+    public void balanceShouldReturnServerErrorIfServiceIsUnavailable() throws Exception {
+        ReflectionTestUtils.setField(controller, "walletService", null);
+        MvcResult mvcResult = postJsonServerError(BALANCE,
+            new BalanceRequest(Instant.parse("2020-10-11T10:30:00Z").atZone(ZoneOffset.UTC),
+                Instant.parse("2020-10-11T11:45:00Z").atZone(ZoneOffset.UTC)));
+        Assertions.assertThat(readJson(mvcResult, GeneralResponseData.class))
+            .isEqualTo(INTERNAL_ERROR_RESPONSE);
+    }
+
     private MvcResult postJsonSuccess(String url, Object body) throws Exception {
         return mvc.perform(
             post(url)
@@ -203,6 +236,15 @@ class WalletControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsBytes(body)))
             .andExpect(status().is4xxClientError())
+            .andReturn();
+    }
+
+    private MvcResult postJsonServerError(String url, Object body) throws Exception {
+        return mvc.perform(
+            post(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(body)))
+            .andExpect(status().is5xxServerError())
             .andReturn();
     }
 
