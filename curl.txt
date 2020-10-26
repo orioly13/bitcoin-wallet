@@ -1,0 +1,9 @@
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"amount":"10.05","datetime":"2019-10-05T14:45:05+07:00"}' \
+  http://localhost:8080/api/wallet/add-entry
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:45:05+07:00","to":"2019-10-05T18:45:05+07:00"}' \
+  http://localhost:8080/api/wallet/balance
