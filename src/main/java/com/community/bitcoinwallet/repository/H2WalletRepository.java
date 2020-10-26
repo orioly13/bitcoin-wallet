@@ -1,7 +1,7 @@
 package com.community.bitcoinwallet.repository;
 
 import com.community.bitcoinwallet.model.WalletEntry;
-import com.community.bitcoinwallet.util.WalletEntryUtils;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -38,7 +38,7 @@ public class H2WalletRepository implements WalletRepository {
             Map.of("from", fromInclusive.toEpochMilli(),
                 "to", to.toEpochMilli()), (rs, rowNum) ->
                 new WalletEntry(Instant.ofEpochMilli(rs.getLong("ts")),
-                    WalletEntryUtils.toBigDecimal((double) rs.getLong("dollars") +
+                    DateAndAmountUtils.toBigDecimal((double) rs.getLong("dollars") +
                         ((double) rs.getInt("cents")) / 100)));
     }
 

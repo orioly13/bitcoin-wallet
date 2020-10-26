@@ -2,12 +2,10 @@ package com.community.bitcoinwallet.util;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 
-public class WalletEntryUtils {
-    private WalletEntryUtils() {
+public final class DateAndAmountUtils {
+    private DateAndAmountUtils() {
     }
 
     public static Instant atStartOfHour(Instant instant) {
@@ -21,7 +19,11 @@ public class WalletEntryUtils {
         return atStartOfHour(instant).plusSeconds(3600);
     }
 
-    public static BigDecimal toBigDecimal(double amount){
+    public static ZonedDateTime toUTCZonedDate(Instant instant) {
+        return instant.atZone(ZoneOffset.UTC);
+    }
+
+    public static BigDecimal toBigDecimal(double amount) {
         return BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP);
     }
 

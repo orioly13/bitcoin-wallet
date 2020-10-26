@@ -1,27 +1,31 @@
 package com.community.bitcoinwallet.service;
 
+import com.community.bitcoinwallet.BitcoinWalletApplication;
 import com.community.bitcoinwallet.model.WalletEntry;
-import com.community.bitcoinwallet.repository.InMemoryWalletRepository;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = {BitcoinWalletApplication.class},
+    properties = "spring.profiles.active=h2")
+@Transactional
 public class WalletServiceTest {
 
     private static final int COUNT_ENTRIES = 6;
     private static final int QUARTER_OF_HOUR_SECONDS = 15 * 60;
 
+    @Autowired
     private WalletService service;
-
-    @BeforeEach
-    public void setUpRepository() {
-        service = new WalletService(new InMemoryWalletRepository());
-    }
 
     @Test
     public void addEntryShouldThrowExceptionsIfIllegalEntyPassed() {
@@ -41,7 +45,7 @@ public class WalletServiceTest {
 
     @Test
     public void getBalanceShouldThrowExceptionsIfIllegalEntyPassed() {
-        Instant now = Instant.parse("2020-10-01T11:00:00.000Z");
+        Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
         Assertions.assertThatThrownBy(() -> service.getBalance(null, now))
             .isInstanceOf(IllegalArgumentException.class);
         Assertions.assertThatThrownBy(() -> service.getBalance(now, null))
@@ -100,17 +104,17 @@ public class WalletServiceTest {
     @Test
     public void shouldSkipHoursWithoutBalance() {
         BigDecimal amount = new BigDecimal("25.10");
-        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T11:00:00.000Z"), amount));
-        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T11:30:00.000Z"), amount));
-        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T13:00:00.000Z"), amount));
-        service.addEntry(new WalletEntry(Instant.parse("2020-10-01T14:15:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:30:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), amount));
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T14:15:00.000Z"), amount));
 
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-10-01T10:00:00.000Z"),
-            Instant.parse("2020-10-01T16:00:00.000Z")))
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T10:00:00.000Z"),
+            Instant.parse("2020-09-01T16:00:00.000Z")))
             .isEqualTo(
-                Arrays.asList(walletEntry(Instant.parse("2020-10-01T12:00:00.000Z"), "50.20"),
-                    walletEntry(Instant.parse("2020-10-01T14:00:00.000Z"), "25.10"),
-                    walletEntry(Instant.parse("2020-10-01T15:00:00.000Z"), "25.10")));
+                Arrays.asList(walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "50.20"),
+                    walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "25.10"),
+                    walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "25.10")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
@@ -118,7 +122,7 @@ public class WalletServiceTest {
     }
 
     private Instant addEntries(boolean reversedTime) {
-        Instant now = Instant.parse("2020-10-01T11:00:00.000Z");
+        Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
         Instant temp = now;
         BigDecimal amount = new BigDecimal("25.10");
         for (int i = 0; i < COUNT_ENTRIES; i++) {

@@ -7,7 +7,7 @@ import com.community.bitcoinwallet.model.response.GeneralResponseData;
 import com.community.bitcoinwallet.model.response.Status;
 import com.community.bitcoinwallet.model.response.WalletEntryResponse;
 import com.community.bitcoinwallet.service.WalletService;
-import com.community.bitcoinwallet.util.WalletEntryUtils;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +36,6 @@ public class WalletController {
 
     WalletService walletService;
 
-
     @PostMapping(value = "/add-entry", consumes = "application/json", produces = "application/json")
     @ResponseBody
     public GeneralResponseData addEntry(@RequestBody AddWalletEntryRequest entryRequest) {
@@ -47,7 +45,7 @@ public class WalletController {
         }
         walletService.addEntry(
             new WalletEntry(entryRequest.getDatetime().toInstant(),
-                WalletEntryUtils.toBigDecimal(entryRequest.getAmount())));
+                DateAndAmountUtils.toBigDecimal(entryRequest.getAmount())));
         return OK_RESPONSE;
     }
 
@@ -62,7 +60,8 @@ public class WalletController {
             balanceRequest.getFrom().toInstant(),
             balanceRequest.getTo().toInstant());
         return entries.stream().map(walletEntry ->
-            new WalletEntryResponse(walletEntry.getDatetime().atZone(ZoneOffset.UTC),
+            new WalletEntryResponse(
+                DateAndAmountUtils.toUTCZonedDate(walletEntry.getDatetime()),
                 walletEntry.getAmount().doubleValue()))
             .collect(Collectors.toList());
     }

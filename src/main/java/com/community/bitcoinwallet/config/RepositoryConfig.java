@@ -3,22 +3,18 @@ package com.community.bitcoinwallet.config;
 import com.community.bitcoinwallet.repository.H2WalletRepository;
 import com.community.bitcoinwallet.repository.InMemoryWalletRepository;
 import com.community.bitcoinwallet.repository.WalletRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
+@RequiredArgsConstructor
 @Import(H2JdbcConfig.class)
 public class RepositoryConfig {
 
     private final H2JdbcConfig h2JdbcConfig;
-
-    @Autowired
-    public RepositoryConfig(H2JdbcConfig h2JdbcConfig) {
-        this.h2JdbcConfig = h2JdbcConfig;
-    }
 
     @Bean("walletRepository")
     @Profile("in-memory")

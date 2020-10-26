@@ -3,7 +3,7 @@ package com.community.bitcoinwallet.service;
 
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.repository.WalletRepository;
-import com.community.bitcoinwallet.util.WalletEntryUtils;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.community.bitcoinwallet.util.WalletEntryUtils.atEndOfHour;
-import static com.community.bitcoinwallet.util.WalletEntryUtils.atStartOfHour;
+import static com.community.bitcoinwallet.util.DateAndAmountUtils.atEndOfHour;
+import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
 
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -36,8 +36,8 @@ public class WalletService {
      */
     public List<WalletEntry> getBalance(Instant from, Instant to) {
         validateInstants(from, to);
-        Instant fromAtStartOfHour = WalletEntryUtils.atStartOfHour(from);
-        Instant toAtStartOfHour = WalletEntryUtils.atStartOfHour(to);
+        Instant fromAtStartOfHour = DateAndAmountUtils.atStartOfHour(from);
+        Instant toAtStartOfHour = DateAndAmountUtils.atStartOfHour(to);
 
         return groupAmountsByHour(repository.getEntries(fromAtStartOfHour, toAtStartOfHour));
     }
