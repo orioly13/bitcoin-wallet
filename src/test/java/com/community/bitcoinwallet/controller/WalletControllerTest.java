@@ -65,6 +65,7 @@ class WalletControllerTest {
 
     @BeforeEach
     public void setUp() {
+        repository.clear();
         ReflectionTestUtils.setField(controller, "walletService", service);
     }
 
@@ -119,7 +120,6 @@ class WalletControllerTest {
 
     @Test
     public void balanceShouldSuccessfullyRertrieveEntries() throws Exception {
-        repository.clear();
         MvcResult mvcResult = postJsonSuccess(BALANCE,
             new BalanceRequest(Instant.parse("2020-10-11T10:30:00Z").atZone(ZoneOffset.UTC),
                 Instant.parse("2020-10-11T11:45:00Z").atZone(ZoneOffset.UTC)));
@@ -145,12 +145,10 @@ class WalletControllerTest {
         Assertions.assertThat(readJson(mvcResult, new TypeReference<List<WalletEntryResponse>>() {
         })).isEqualTo(Collections.singletonList(
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3)));
-        repository.clear();
     }
 
     @Test
     public void balanceShouldSuccessfullyFillEmptyHourss() throws Exception {
-        repository.clear();
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
             DateAndAmountUtils.toBigDecimal("10.1")));
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
@@ -167,13 +165,11 @@ class WalletControllerTest {
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T14:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 32.5)));
-        repository.clear();
     }
 
 
     @Test
     public void balanceShouldProcessOtherTimeZones() throws Exception {
-        repository.clear();
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
             DateAndAmountUtils.toBigDecimal("10.1")));
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
@@ -190,7 +186,6 @@ class WalletControllerTest {
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T14:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 32.5)));
-        repository.clear();
     }
 
 

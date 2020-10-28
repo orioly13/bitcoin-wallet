@@ -32,6 +32,11 @@ public class WalletServiceTest {
     @Autowired
     private WalletRepository repository;
 
+    @BeforeEach
+    private void setUp() {
+        repository.clear();
+    }
+
     @Test
     public void addEntryShouldThrowExceptionsIfIllegalEntyPassed() {
         Assertions.assertThatThrownBy(() -> service.addEntry(null))
@@ -108,7 +113,6 @@ public class WalletServiceTest {
 
     @Test
     public void shouldFillEmptyHoursWithCurrentBalance() {
-        repository.clear();
         BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:30:00.000Z"), amount));
@@ -126,7 +130,6 @@ public class WalletServiceTest {
                     walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
                     walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4"),
                     walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4")));
-        repository.clear();
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
@@ -134,7 +137,6 @@ public class WalletServiceTest {
     }
 
     private Instant addEntries(boolean reversedTime) {
-        repository.clear();
         Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
         Instant temp = now;
         BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");
