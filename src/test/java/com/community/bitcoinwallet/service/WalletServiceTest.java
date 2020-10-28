@@ -132,6 +132,23 @@ public class WalletServiceTest {
                     walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4")));
     }
 
+    @Test
+    public void shouldComputeCorrectAmount() {
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:00:00.000Z"),
+            DateAndAmountUtils.toBigDecimal("1")));
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:30:00.000Z"),
+            DateAndAmountUtils.toBigDecimal("2")));
+        service.addEntry(new WalletEntry(Instant.parse("2020-09-01T12:00:00.000Z"),
+            DateAndAmountUtils.toBigDecimal("1")));
+
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T11:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z")))
+            .isEqualTo(
+                Arrays.asList(
+                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
+                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+    }
+
     private WalletEntry walletEntry(Instant instant, String amount) {
         return new WalletEntry(instant, DateAndAmountUtils.toBigDecimal(amount));
     }
