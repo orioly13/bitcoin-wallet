@@ -9,6 +9,7 @@ import com.community.bitcoinwallet.model.response.Status;
 import com.community.bitcoinwallet.model.response.WalletEntryResponse;
 import com.community.bitcoinwallet.repository.WalletRepository;
 import com.community.bitcoinwallet.service.WalletService;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import liquibase.pro.packaged.B;
@@ -124,8 +125,10 @@ class WalletControllerTest {
         Assertions.assertThat(readJson(mvcResult, List.class))
             .isEqualTo(Collections.emptyList());
 
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"), new BigDecimal("10.1")));
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"), new BigDecimal("11.2")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
+            DateAndAmountUtils.toBigDecimal("10.1")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
+            DateAndAmountUtils.toBigDecimal("11.2")));
 
         mvcResult = postJsonSuccess(BALANCE,
             new BalanceRequest(Instant.parse("2020-10-11T11:30:00Z").atZone(ZoneOffset.UTC),
@@ -143,9 +146,12 @@ class WalletControllerTest {
 
     @Test
     public void balanceShouldSuccessfullySkipEmptyHourss() throws Exception {
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"), new BigDecimal("10.1")));
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"), new BigDecimal("11.2")));
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T14:15:00Z"), new BigDecimal("11.2")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
+            DateAndAmountUtils.toBigDecimal("10.1")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
+            DateAndAmountUtils.toBigDecimal("11.2")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T14:15:00Z"),
+            DateAndAmountUtils.toBigDecimal("11.2")));
 
 
         MvcResult mvcResult = postJsonSuccess(BALANCE,
@@ -160,9 +166,12 @@ class WalletControllerTest {
 
     @Test
     public void balanceShouldProcessOtherTimeZones() throws Exception {
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"), new BigDecimal("10.1")));
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"), new BigDecimal("11.2")));
-        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T14:15:00Z"), new BigDecimal("11.2")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
+            DateAndAmountUtils.toBigDecimal("10.1")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
+            DateAndAmountUtils.toBigDecimal("11.2")));
+        repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T14:15:00Z"),
+            DateAndAmountUtils.toBigDecimal("11.2")));
 
 
         MvcResult mvcResult = postJsonSuccess(BALANCE,

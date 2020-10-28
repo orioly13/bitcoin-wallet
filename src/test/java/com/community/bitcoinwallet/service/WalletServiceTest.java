@@ -2,6 +2,7 @@ package com.community.bitcoinwallet.service;
 
 import com.community.bitcoinwallet.BitcoinWalletApplication;
 import com.community.bitcoinwallet.model.WalletEntry;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -104,7 +105,7 @@ public class WalletServiceTest {
 
     @Test
     public void shouldSkipHoursWithoutBalance() {
-        BigDecimal amount = new BigDecimal("25.10");
+        BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:30:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), amount));
@@ -119,13 +120,13 @@ public class WalletServiceTest {
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
-        return new WalletEntry(instant, new BigDecimal(amount).setScale(8,RoundingMode.HALF_UP));
+        return new WalletEntry(instant, DateAndAmountUtils.toBigDecimal(amount));
     }
 
     private Instant addEntries(boolean reversedTime) {
         Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
         Instant temp = now;
-        BigDecimal amount = new BigDecimal("25.10").setScale(8, RoundingMode.HALF_UP);
+        BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");
         for (int i = 0; i < COUNT_ENTRIES; i++) {
             service.addEntry(new WalletEntry(temp, amount));
             temp = reversedTime ? temp.minusSeconds(QUARTER_OF_HOUR_SECONDS) :

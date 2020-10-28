@@ -1,6 +1,7 @@
 package com.community.bitcoinwallet.repository;
 
 import com.community.bitcoinwallet.model.WalletEntry;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,8 +52,7 @@ public abstract class GenericRepositoryTest {
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
-        WalletEntry walletEntry = new WalletEntry(instant, new BigDecimal(amount).setScale(8,
-            RoundingMode.HALF_UP));
+        WalletEntry walletEntry = new WalletEntry(instant, DateAndAmountUtils.toBigDecimal(amount));
         repository.addEntry(walletEntry);
         return walletEntry;
     }
