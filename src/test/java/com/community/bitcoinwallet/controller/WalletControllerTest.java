@@ -103,7 +103,7 @@ class WalletControllerTest {
                 .atZone(ZoneOffset.UTC), -10.1));
         Assertions.assertThat(readJson(mvcResult, GeneralResponseData.class))
             .isEqualTo(new GeneralResponseData(Status.CLIENT_ERROR,
-                "Amount is negative in entry:WalletEntry(datetime=2020-10-20T12:00:00Z, amount=-10.10)"));
+                "Amount is negative in entry:WalletEntry(datetime=2020-10-20T12:00:00Z, amount=-10.1)"));
     }
 
     @Test

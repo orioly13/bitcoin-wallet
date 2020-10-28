@@ -16,9 +16,11 @@ import java.util.Map;
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class H2WalletRepository implements WalletRepository {
 
-    private static final String INSERT_INTO_WALLET = "insert into WALLET(ts,dollars,cents) " +
-        " values(:ts,:dollars,:cents)";
-    private static final String SELECT_IN_TIME_RANGE = "select ts,dollars,cents from WALLET " +
+    private static final long PRECISION = (long) Math.pow(10, 8);
+
+    private static final String INSERT_INTO_WALLET = "insert into WALLET(ts,bitcoins,b_cents) " +
+        " values(:ts,:bitcoins,:b_cents)";
+    private static final String SELECT_IN_TIME_RANGE = "select ts,bitcoins,b_cents from WALLET " +
         "where (ts >= :from) and (ts < :to) " +
         "order by ts";
 
@@ -28,8 +30,8 @@ public class H2WalletRepository implements WalletRepository {
     public void addEntry(WalletEntry entry) {
         jdbcTemplate.update(INSERT_INTO_WALLET,
             Map.of("ts", entry.getDatetime().toEpochMilli(),
-                "dollars", entry.getAmount().longValue(),
-                "cents", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * 100)));
+                "bitcoins", entry.getAmount().longValue(),
+                "b_cents", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION)));
     }
 
     @Override
@@ -38,8 +40,8 @@ public class H2WalletRepository implements WalletRepository {
             Map.of("from", fromInclusive.toEpochMilli(),
                 "to", to.toEpochMilli()), (rs, rowNum) ->
                 new WalletEntry(Instant.ofEpochMilli(rs.getLong("ts")),
-                    DateAndAmountUtils.toBigDecimal((double) rs.getLong("dollars") +
-                        ((double) rs.getInt("cents")) / 100)));
+                    DateAndAmountUtils.toBigDecimal((double) rs.getLong("bitcoins") +
+                        ((double) rs.getInt("b_cents")) / PRECISION)));
     }
 
 }

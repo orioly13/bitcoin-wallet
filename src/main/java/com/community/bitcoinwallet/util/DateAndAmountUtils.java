@@ -24,7 +24,7 @@ public final class DateAndAmountUtils {
     }
 
     public static BigDecimal toBigDecimal(double amount) {
-        return BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP);
+        return BigDecimal.valueOf(amount).setScale(8, RoundingMode.HALF_UP);
     }
 
 

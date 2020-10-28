@@ -11,6 +11,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -118,13 +119,13 @@ public class WalletServiceTest {
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
-        return new WalletEntry(instant, new BigDecimal(amount));
+        return new WalletEntry(instant, new BigDecimal(amount).setScale(8,RoundingMode.HALF_UP));
     }
 
     private Instant addEntries(boolean reversedTime) {
         Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
         Instant temp = now;
-        BigDecimal amount = new BigDecimal("25.10");
+        BigDecimal amount = new BigDecimal("25.10").setScale(8, RoundingMode.HALF_UP);
         for (int i = 0; i < COUNT_ENTRIES; i++) {
             service.addEntry(new WalletEntry(temp, amount));
             temp = reversedTime ? temp.minusSeconds(QUARTER_OF_HOUR_SECONDS) :
