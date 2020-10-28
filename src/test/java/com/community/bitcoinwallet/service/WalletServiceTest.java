@@ -73,12 +73,12 @@ public class WalletServiceTest {
             .isEqualTo(
                 Collections.singletonList(walletEntry(nextHour, "100.40")));
 
-        Instant nextHour3 = nextHour2.plusSeconds(3600);
-        Assertions.assertThat(service.getBalance(instant, nextHour3))
+        Assertions.assertThat(service.getBalance(instant, nextHour2))
             .isEqualTo(
                 Arrays.asList(walletEntry(nextHour, "100.40"),
                     walletEntry(nextHour2, "150.60")));
 
+        Instant nextHour3 = nextHour2.plusSeconds(3600);
         Assertions.assertThat(service.getBalance(nextHour3, nextHour3.plusSeconds(3600)))
             .isEqualTo(Collections.emptyList());
     }
@@ -103,20 +103,24 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void shouldSkipHoursWithoutBalance() {
+    public void shouldFillEmptyHoursWithCurrentBalance() {
         BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:30:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T14:15:00.000Z"), amount));
 
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T10:00:00.000Z"),
-            Instant.parse("2020-09-01T16:00:00.000Z")))
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T09:00:00.000Z"),
+            Instant.parse("2020-09-01T17:00:00.000Z")))
             .isEqualTo(
-                Arrays.asList(walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "50.20"),
+                Arrays.asList(
+                    walletEntry(Instant.parse("2020-09-01T10:00:00.000Z"), "0.0"),
+                    walletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), "0.0"),
+                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "50.20"),
                     walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "50.20"),
                     walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
-                    walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4")));
+                    walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4"),
+                    walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
