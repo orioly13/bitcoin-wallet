@@ -4,7 +4,6 @@ package com.community.bitcoinwallet.service;
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.repository.WalletRepository;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
-import liquibase.pro.packaged.B;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -12,11 +11,7 @@ import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static com.community.bitcoinwallet.util.DateAndAmountUtils.atEndOfHour;
 import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
@@ -38,72 +33,55 @@ public class WalletService {
      */
     public List<WalletEntry> getBalance(Instant from, Instant to) {
         validateInstants(from, to);
-        Instant fromAtStartOfHour = DateAndAmountUtils.atStartOfHour(from);
-        Instant toAtStartOfHour = DateAndAmountUtils.atStartOfHour(to);
 
-        return groupAmountsByHour(repository.getBalancesByHour(fromAtStartOfHour, toAtStartOfHour),
+        return groupAmountsByHour(repository.getBalancesByHour(from, to),
             DateAndAmountUtils.atEndOfHour(from), DateAndAmountUtils.atStartOfHour(to));
     }
 
     private List<WalletEntry> groupAmountsByHour(Collection<WalletEntry> entries,
                                                  Instant fromAtEndOfHour,
                                                  Instant toAtStartOfHour) {
-        BigDecimal amountBeforeTimeFrame = entries.stream().filter(
-            walletEntry -> walletEntry.getDatetime().isBefore(fromAtEndOfHour))
-            .map(WalletEntry::getAmount)
-            .reduce(BigDecimal::add)
-            .orElse(DateAndAmountUtils.toBigDecimal(0.0));
+        List<WalletEntry> res = new ArrayList<>();
+        Iterator<WalletEntry> iterator = entries.iterator();
+        WalletEntry currentDiff = iterator.next();
+        Optional<WalletEntry> nextDiff = getNext(iterator);
+        Instant currentHour = fromAtEndOfHour;
 
-        BigDecimal[] incrementHolder = new BigDecimal[]{amountBeforeTimeFrame.add(BigDecimal.ZERO)};
-        List<WalletEntry> balanceByHour = entries.stream()
-            .filter(walletEntry -> walletEntry.getDatetime().equals(fromAtEndOfHour)
-                || walletEntry.getDatetime().isAfter(fromAtEndOfHour))
-            .map(walletEntry -> new WalletEntry(atEndOfHour(walletEntry.getDatetime()), walletEntry.getAmount()))
-            .collect(Collectors.groupingBy(WalletEntry::getDatetime, LinkedHashMap::new,
-                Collectors.reducing(BigDecimal.ZERO, WalletEntry::getAmount, BigDecimal::add)))
-            .entrySet()
-            .stream()
-            .map(e -> {
-                BigDecimal increment = incrementHolder[0];
-                BigDecimal amount = e.getValue().add(increment);
-                incrementHolder[0] = increment.add(e.getValue());
-                return new WalletEntry(e.getKey(), amount);
-            })
-            .collect(Collectors.toList());
+        if (nextDiff.isPresent() &&
+            (currentHour.isAfter(nextDiff.get().getDatetime()) ||
+                currentHour.equals(nextDiff.get().getDatetime()))) {
+            currentDiff = nextDiff.get();
+            nextDiff = getNext(iterator);
+        }
+        while (currentHourIsAfterCurrentDiff(currentHour, currentDiff) &&
+            currentHourIsBeforeNextDiff(currentHour, nextDiff)) {
+            res.add(new WalletEntry(currentHour, currentDiff.getAmount()));
+            currentHour = currentHour.plus(1, ChronoUnit.HOURS);
 
-        List<WalletEntry> result = new LinkedList<>();
-        for (int i = 0; i < balanceByHour.size(); i++) {
-            WalletEntry current = balanceByHour.get(i);
-            WalletEntry next = null;
-            if (i < balanceByHour.size() - 1) {
-                next = balanceByHour.get(i + 1);
-            }
-            result.add(current);
-            if (next == null) {
-                continue;
-            }
-            Instant temp = current.getDatetime().plus(1, ChronoUnit.HOURS);
-            while (temp.isBefore(next.getDatetime())) {
-                result.add(new WalletEntry(temp, current.getAmount()));
-                temp = temp.plus(1, ChronoUnit.HOURS);
+            if (currentHour.isAfter(nextDiff.get().getDatetime()) ||
+                currentHour.equals(nextDiff.get().getDatetime())) {
+                currentDiff = nextDiff.get();
+                nextDiff = getNext(iterator);
             }
         }
-
-        Instant temp = result.isEmpty() ? toAtStartOfHour :
-            result.get(0).getDatetime().minus(1, ChronoUnit.HOURS);
-        while (temp.isAfter(fromAtEndOfHour) || temp.equals(fromAtEndOfHour)) {
-            result.add(0, new WalletEntry(temp, amountBeforeTimeFrame));
-            temp = temp.minus(1, ChronoUnit.HOURS);
+        while (currentHour.isBefore(toAtStartOfHour) || currentHour.equals(toAtStartOfHour)) {
+            res.add(new WalletEntry(currentHour, currentDiff.getAmount()));
+            currentHour = currentHour.plus(1, ChronoUnit.HOURS);
         }
+        return res;
+    }
 
-        temp = result.isEmpty() ? null : result.get(result.size() - 1).getDatetime()
-            .plus(1, ChronoUnit.HOURS);
-        WalletEntry lastEntry = result.isEmpty() ? null : result.get(result.size() - 1);
-        while (!result.isEmpty() && temp.isBefore(toAtStartOfHour)) {
-            result.add(new WalletEntry(temp, lastEntry.getAmount()));
-            temp = temp.plus(1, ChronoUnit.HOURS);
-        }
-        return result;
+    private boolean currentHourIsAfterCurrentDiff(Instant currentHour, WalletEntry currentDiff) {
+        Instant diffTs = currentDiff.getDatetime();
+        return currentHour.equals(diffTs) || currentHour.isAfter(diffTs);
+    }
+
+    private boolean currentHourIsBeforeNextDiff(Instant currentHour, Optional<WalletEntry> nextDiff) {
+        return nextDiff.isPresent() && currentHour.isBefore(nextDiff.get().getDatetime());
+    }
+
+    private Optional<WalletEntry> getNext(Iterator<WalletEntry> entryIterator) {
+        return entryIterator.hasNext() ? Optional.of(entryIterator.next()) : Optional.empty();
     }
 
     private void validateWalletEntry(WalletEntry entry) {

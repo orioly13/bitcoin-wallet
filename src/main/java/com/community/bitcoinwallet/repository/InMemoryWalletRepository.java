@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import javax.annotation.PreDestroy;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Deque;
@@ -24,7 +25,16 @@ public class InMemoryWalletRepository implements WalletRepository {
     boolean asyncCalculation;
     PriorityBlockingQueue<WalletEntry> entries = new PriorityBlockingQueue<>();
     Deque<WalletEntry> balances = new ConcurrentLinkedDeque<>();
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    ExecutorService executorService;
+
+    public InMemoryWalletRepository(boolean asyncBalanceCalculation) {
+        this.asyncCalculation = asyncBalanceCalculation;
+        if (asyncBalanceCalculation) {
+            executorService = Executors.newSingleThreadExecutor();
+        } else {
+            executorService = null;
+        }
+    }
 
     @Override
     public void addEntry(WalletEntry entry) {
@@ -87,6 +97,13 @@ public class InMemoryWalletRepository implements WalletRepository {
         BigDecimal lastAmount = balances.getLast().getAmount();
         if (balances.getLast().getDatetime().isBefore(atEndOfHour)) {
             balances.addLast(new WalletEntry(atEndOfHour, walletEntry.getAmount().add(lastAmount)));
+        }
+    }
+
+    @PreDestroy
+    public void shutDownExecutor() {
+        if (asyncCalculation) {
+            executorService.shutdownNow();
         }
     }
 
