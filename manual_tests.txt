@@ -1,0 +1,64 @@
+## different gets
+-- ex
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:45:05Z","to":"2019-10-05T14:55:05Z"}' \
+  http://localhost:8080/api/wallet/balance
+
+--ex
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:00:00Z","to":"2019-10-05T14:00:00Z"}' \
+  http://localhost:8080/api/wallet/balance
+--ex
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:00:00Z","to":"2019-10-05T14:15:00Z"}' \
+  http://localhost:8080/api/wallet/balance
+
+--ok!
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:00:00Z","to":"2019-10-05T15:00:00Z"}' \
+  http://localhost:8080/api/wallet/balance
+
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:00:00Z","to":"2019-10-05T15:15:00Z"}' \
+  http://localhost:8080/api/wallet/balance
+
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:00:00Z","to":"2019-10-05T18:00:00Z"}' \
+  http://localhost:8080/api/wallet/balance
+
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"from":"2019-10-05T14:45:05Z","to":"2019-10-05T18:45:05Z"}' \
+  http://localhost:8080/api/wallet/balance
+
+
+##adds
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"amount":"10.05","datetime":"2019-10-05T14:00:00Z"}' \
+  http://localhost:8080/api/wallet/add-entry
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"amount":"10.05","datetime":"2019-10-05T14:45:05Z"}' \
+  http://localhost:8080/api/wallet/add-entry
+
+curl -v --header "Content-Type: application/json" \
+    --request POST \
+    --data '{"amount":"10.05","datetime":"2019-10-05T16:45:05Z"}' \
+    http://localhost:8080/api/wallet/add-entry
+
+curl -v --header "Content-Type: application/json" \
+    --request POST \
+    --data '{"amount":"10.05","datetime":"2019-10-05T19:45:05Z"}' \
+    http://localhost:8080/api/wallet/add-entry
