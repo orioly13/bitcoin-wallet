@@ -36,10 +36,10 @@ public class H2WalletRepository implements WalletRepository {
     }
 
     @Override
-    public List<WalletEntry> getEntries(Instant fromInclusive, Instant to) {
+    public List<WalletEntry> getBalancesByHour(Instant fromExclusive, Instant toInclusive) {
         return jdbcTemplate.query(SELECT_IN_TIME_RANGE,
-            Map.of("from", fromInclusive.toEpochMilli(),
-                "to", to.toEpochMilli()), (rs, rowNum) ->
+            Map.of("from", fromExclusive.toEpochMilli(),
+                "to", toInclusive.toEpochMilli()), (rs, rowNum) ->
                 new WalletEntry(Instant.ofEpochMilli(rs.getLong("ts")),
                     DateAndAmountUtils.toBigDecimal((double) rs.getLong("bitcoins") +
                         ((double) rs.getInt("b_cents")) / PRECISION)));

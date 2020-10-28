@@ -9,8 +9,7 @@ public interface WalletRepository {
 
     void addEntry(WalletEntry entry);
 
-    List<WalletEntry> getEntries(Instant fromInclusive, Instant to);
-
+    List<WalletEntry> getBalancesByHour(Instant fromExclusive, Instant toInclusive);
 
     void clear();
 

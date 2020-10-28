@@ -41,7 +41,7 @@ public class WalletService {
         Instant fromAtStartOfHour = DateAndAmountUtils.atStartOfHour(from);
         Instant toAtStartOfHour = DateAndAmountUtils.atStartOfHour(to);
 
-        return groupAmountsByHour(repository.getEntries(fromAtStartOfHour, toAtStartOfHour),
+        return groupAmountsByHour(repository.getBalancesByHour(fromAtStartOfHour, toAtStartOfHour),
             DateAndAmountUtils.atEndOfHour(from), DateAndAmountUtils.atStartOfHour(to));
     }
 
