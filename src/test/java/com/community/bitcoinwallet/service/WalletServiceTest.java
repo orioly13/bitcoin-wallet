@@ -12,7 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,7 +77,7 @@ public class WalletServiceTest {
         Assertions.assertThat(service.getBalance(instant, nextHour3))
             .isEqualTo(
                 Arrays.asList(walletEntry(nextHour, "100.40"),
-                    walletEntry(nextHour2, "50.20")));
+                    walletEntry(nextHour2, "150.60")));
 
         Assertions.assertThat(service.getBalance(nextHour3, nextHour3.plusSeconds(3600)))
             .isEqualTo(Collections.emptyList());
@@ -97,7 +96,7 @@ public class WalletServiceTest {
         Assertions.assertThat(service.getBalance(prevTwoHours, instant))
             .isEqualTo(
                 Arrays.asList(walletEntry(prevHour, "25.10"),
-                    walletEntry(instant, "100.40")));
+                    walletEntry(instant, "125.50")));
 
         Assertions.assertThat(service.getBalance(prevTwoHours.minusSeconds(3600), prevTwoHours))
             .isEqualTo(Collections.emptyList());
@@ -115,8 +114,9 @@ public class WalletServiceTest {
             Instant.parse("2020-09-01T16:00:00.000Z")))
             .isEqualTo(
                 Arrays.asList(walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "50.20"),
-                    walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "25.10"),
-                    walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "25.10")));
+                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "50.20"),
+                    walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
+                    walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {

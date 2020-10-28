@@ -10,10 +10,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.community.bitcoinwallet.util.DateAndAmountUtils.atEndOfHour;
@@ -43,15 +44,40 @@ public class WalletService {
     }
 
     private List<WalletEntry> groupAmountsByHour(Collection<WalletEntry> entries) {
-        Map<Instant, BigDecimal> groupedByHour = entries.stream()
+        BigDecimal[] incrementHolder = new BigDecimal[]{DateAndAmountUtils.toBigDecimal(0.0)};
+        List<WalletEntry> balanceByHour = entries.stream()
             .map(walletEntry -> new WalletEntry(atEndOfHour(walletEntry.getDatetime()), walletEntry.getAmount()))
             .collect(Collectors.groupingBy(WalletEntry::getDatetime, LinkedHashMap::new,
-                Collectors.reducing(BigDecimal.ZERO, WalletEntry::getAmount, BigDecimal::add)));
-        return groupedByHour.entrySet()
+                Collectors.reducing(BigDecimal.ZERO, WalletEntry::getAmount, BigDecimal::add)))
+            .entrySet()
             .stream()
-            .map(e -> new WalletEntry(e.getKey(), e.getValue()))
-            .filter(walletEntry -> walletEntry.getAmount().compareTo(BigDecimal.ZERO) > 0)
+            .map(e -> {
+                BigDecimal increment = incrementHolder[0];
+                BigDecimal amount = e.getValue().add(increment);
+                incrementHolder[0] = increment.add(e.getValue());
+                return new WalletEntry(e.getKey(), amount);
+            })
             .collect(Collectors.toList());
+
+        List<WalletEntry> result = new ArrayList<>();
+        for (int i = 0; i < balanceByHour.size(); i++) {
+            WalletEntry current = balanceByHour.get(i);
+            WalletEntry next = null;
+            if (i < balanceByHour.size() - 1) {
+                next = balanceByHour.get(i + 1);
+            }
+            result.add(current);
+            if (next == null) {
+                continue;
+            }
+            Instant temp = current.getDatetime().plus(1, ChronoUnit.HOURS);
+            while (temp.isBefore(next.getDatetime())) {
+                result.add(new WalletEntry(temp, current.getAmount()));
+                temp = temp.plus(1, ChronoUnit.HOURS);
+            }
+        }
+
+        return result;
     }
 
     private void validateWalletEntry(WalletEntry entry) {

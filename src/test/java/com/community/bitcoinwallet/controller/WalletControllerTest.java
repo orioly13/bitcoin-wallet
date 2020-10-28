@@ -160,7 +160,8 @@ class WalletControllerTest {
         Assertions.assertThat(readJson(mvcResult, new TypeReference<List<WalletEntryResponse>>() {
         })).isEqualTo(Arrays.asList(
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
-            new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 11.2)));
+            new WalletEntryResponse(Instant.parse("2020-10-20T14:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
+            new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 32.5)));
     }
 
 
@@ -180,7 +181,8 @@ class WalletControllerTest {
         Assertions.assertThat(readJson(mvcResult, new TypeReference<List<WalletEntryResponse>>() {
         })).isEqualTo(Arrays.asList(
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
-            new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 11.2)));
+            new WalletEntryResponse(Instant.parse("2020-10-20T14:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
+            new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 32.5)));
     }
 
 
