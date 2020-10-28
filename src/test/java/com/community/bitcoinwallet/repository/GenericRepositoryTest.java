@@ -3,6 +3,8 @@ package com.community.bitcoinwallet.repository;
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import org.assertj.core.api.Assertions;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

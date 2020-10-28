@@ -17,6 +17,10 @@ public class RepositoryConfig {
 
     @Value("${bitcoin-wallet.balance.async-balance:false}")
     private boolean asyncBalance;
+    @Value("${bitcoin-wallet.balance.async-balance.period-millis:100}")
+    private long updatePeriod;
+    @Value("${bitcoin-wallet.balance.async-balance.batch-size:1000}")
+    private int batchSize;
 
     private final H2JdbcConfig h2JdbcConfig;
 
@@ -29,6 +33,7 @@ public class RepositoryConfig {
     @Bean("walletRepository")
     @Profile("h2")
     public WalletRepository walletRepositoryH2() {
-        return new H2WalletRepository(h2JdbcConfig.h2NamedParameterJdbcTemplate());
+        return new H2WalletRepository(asyncBalance, h2JdbcConfig.h2NamedParameterJdbcTemplate(),
+            updatePeriod, batchSize);
     }
 }
