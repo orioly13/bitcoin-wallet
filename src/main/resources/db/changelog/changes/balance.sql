@@ -5,5 +5,5 @@
 CREATE TABLE PUBLIC.BALANCE(
    TS bigint not null primary key,
    BITCOINS bigint not null,
-   B_CENTS bigint not null
+   SATOSHI bigint not null
 );

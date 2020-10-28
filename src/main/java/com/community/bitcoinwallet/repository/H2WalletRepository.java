@@ -26,32 +26,32 @@ public class H2WalletRepository implements WalletRepository {
     public static final RowMapper<WalletEntry> ROW_MAPPER = (rs, rowNum) ->
         new WalletEntry(Instant.ofEpochMilli(rs.getLong("ts")),
             DateAndAmountUtils.toBigDecimal((double) rs.getLong("bitcoins") +
-                ((double) rs.getInt("b_cents")) / PRECISION));
+                ((double) rs.getInt("satoshi")) / PRECISION));
 
     private static final String WALLET = "WALLET";
     private static final String BALANCE = "BALANCE";
     private static final String BALANCE_QUEUE = "BALANCE_UPDATE_QUEUE";
 
-    private static final String SELECT_BALANCE_TIME_RANGE = "select ts,bitcoins,b_cents from BALANCE " +
+    private static final String SELECT_BALANCE_TIME_RANGE = "select ts,bitcoins,satoshi from BALANCE " +
         "where (ts > :from and ts < :to) or ts = :to";
     private static final String COUNT_BALANCES = "select count(*) c from BALANCE";
-    private static final String SELECT_BALANCES_FOR_UPDATE = "select ts,bitcoins,b_cents from BALANCE " +
+    private static final String SELECT_BALANCES_FOR_UPDATE = "select ts,bitcoins,satoshi from BALANCE " +
         "where (ts > :from) limit :limit";
-    private static final String SELECT_MAX_BALANCE_BEFORE_TIME_RANGE = "select ts,bitcoins,b_cents from BALANCE " +
+    private static final String SELECT_MAX_BALANCE_BEFORE_TIME_RANGE = "select ts,bitcoins,satoshi from BALANCE " +
         "where (ts <= :from) " +
         "order by ts desc " +
         "limit 1";
-    private static final String SELECT_LAST_BALANCE = "select ts, bitcoins, b_cents from BALANCE " +
+    private static final String SELECT_LAST_BALANCE = "select ts, bitcoins, satoshi from BALANCE " +
         "order by ts desc " +
         "limit 1";
-    private static final String SELECT_FIRST_BALANCE = "select ts, bitcoins, b_cents c from BALANCE " +
+    private static final String SELECT_FIRST_BALANCE = "select ts, bitcoins, satoshi c from BALANCE " +
         "order by ts " +
         "limit 1";
 
-    private static final String UPDATE_BALANCE = "update BALANCE set bitcoins=:bitcoins,b_cents=:b_cents where" +
+    private static final String UPDATE_BALANCE = "update BALANCE set bitcoins=:bitcoins,satoshi=:satoshi where" +
         " ts=:ts";
 
-    private static final String SELECT_NEXT_FROM_QUEUE = "select ts,bitcoins,b_cents from BALANCE_UPDATE_QUEUE " +
+    private static final String SELECT_NEXT_FROM_QUEUE = "select ts,bitcoins,satoshi from BALANCE_UPDATE_QUEUE " +
         "order by ts " +
         "limit 1";
     private static final String SELECT_ID_FROM_QUEUE = "select id from BALANCE_UPDATE_QUEUE " +
@@ -59,8 +59,8 @@ public class H2WalletRepository implements WalletRepository {
         "limit 1";
     private static final String DELETE_FROM_QUEUE = "delete from BALANCE_UPDATE_QUEUE where id=:id";
 
-    private static final String INSERT = "insert into %s(ts,bitcoins,b_cents) " +
-        " values(:ts, :bitcoins, :b_cents)";
+    private static final String INSERT = "insert into %s(ts,bitcoins,satoshi) " +
+        " values(:ts, :bitcoins, :satoshi)";
     private static final String CLEAR = "delete from %s where 1=1";
 
     boolean asyncBalanceCalculation;
@@ -88,7 +88,7 @@ public class H2WalletRepository implements WalletRepository {
     public void addEntry(WalletEntry entry) {
         Map<String, ? extends Number> values = Map.of("ts", entry.getDatetime().toEpochMilli(),
             "bitcoins", entry.getAmount().longValue(),
-            "b_cents", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION));
+            "satoshi", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION));
         jdbcTemplate.update(String.format(INSERT, WALLET), values);
         if (asyncBalanceCalculation) {
             jdbcTemplate.update(String.format(INSERT, BALANCE_QUEUE), values);
@@ -185,7 +185,7 @@ public class H2WalletRepository implements WalletRepository {
         for (WalletEntry entry : balancesToUpdate) {
             Map<String, ? extends Number> values = Map.of("ts", entry.getDatetime().toEpochMilli(),
                 "bitcoins", entry.getAmount().longValue(),
-                "b_cents", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION));
+                "satoshi", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION));
             jdbcTemplate.update(UPDATE_BALANCE, values);
         }
     }
@@ -193,7 +193,7 @@ public class H2WalletRepository implements WalletRepository {
     private void insertBalance(WalletEntry entry) {
         Map<String, ? extends Number> values = Map.of("ts", entry.getDatetime().toEpochMilli(),
             "bitcoins", entry.getAmount().longValue(),
-            "b_cents", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION));
+            "satoshi", (int) (entry.getAmount().remainder(BigDecimal.ONE).doubleValue() * PRECISION));
         jdbcTemplate.update(String.format(INSERT, BALANCE), values);
     }
 
