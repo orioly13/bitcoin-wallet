@@ -4,6 +4,7 @@ package com.community.bitcoinwallet.service;
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.repository.WalletRepository;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
+import liquibase.pro.packaged.B;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -47,8 +48,16 @@ public class WalletService {
     private List<WalletEntry> groupAmountsByHour(Collection<WalletEntry> entries,
                                                  Instant fromAtEndOfHour,
                                                  Instant toAtStartOfHour) {
-        BigDecimal[] incrementHolder = new BigDecimal[]{DateAndAmountUtils.toBigDecimal(0.0)};
+        BigDecimal amountBeforeTimeFrame = entries.stream().filter(
+            walletEntry -> walletEntry.getDatetime().isBefore(fromAtEndOfHour))
+            .map(WalletEntry::getAmount)
+            .reduce(BigDecimal::add)
+            .orElse(DateAndAmountUtils.toBigDecimal(0.0));
+
+        BigDecimal[] incrementHolder = new BigDecimal[]{amountBeforeTimeFrame.add(BigDecimal.ZERO)};
         List<WalletEntry> balanceByHour = entries.stream()
+            .filter(walletEntry -> walletEntry.getDatetime().equals(fromAtEndOfHour)
+                || walletEntry.getDatetime().isAfter(fromAtEndOfHour))
             .map(walletEntry -> new WalletEntry(atEndOfHour(walletEntry.getDatetime()), walletEntry.getAmount()))
             .collect(Collectors.groupingBy(WalletEntry::getDatetime, LinkedHashMap::new,
                 Collectors.reducing(BigDecimal.ZERO, WalletEntry::getAmount, BigDecimal::add)))
@@ -80,9 +89,10 @@ public class WalletService {
             }
         }
 
-        Instant temp = result.isEmpty() ? null : result.get(0).getDatetime().minus(1, ChronoUnit.HOURS);
-        while (!result.isEmpty() && (temp.isAfter(fromAtEndOfHour) || temp.equals(fromAtEndOfHour))) {
-            result.add(0, new WalletEntry(temp, DateAndAmountUtils.toBigDecimal(0.0)));
+        Instant temp = result.isEmpty() ? toAtStartOfHour :
+            result.get(0).getDatetime().minus(1, ChronoUnit.HOURS);
+        while (temp.isAfter(fromAtEndOfHour) || temp.equals(fromAtEndOfHour)) {
+            result.add(0, new WalletEntry(temp, amountBeforeTimeFrame));
             temp = temp.minus(1, ChronoUnit.HOURS);
         }
 

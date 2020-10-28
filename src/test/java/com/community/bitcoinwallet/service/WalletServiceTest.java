@@ -2,8 +2,10 @@ package com.community.bitcoinwallet.service;
 
 import com.community.bitcoinwallet.BitcoinWalletApplication;
 import com.community.bitcoinwallet.model.WalletEntry;
+import com.community.bitcoinwallet.repository.WalletRepository;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,7 @@ import java.util.Collections;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = "spring.profiles.active=h2")
+    properties = "spring.profiles.active=in-memory")
 @Transactional
 public class WalletServiceTest {
 
@@ -27,6 +29,8 @@ public class WalletServiceTest {
 
     @Autowired
     private WalletService service;
+    @Autowired
+    private WalletRepository repository;
 
     @Test
     public void addEntryShouldThrowExceptionsIfIllegalEntyPassed() {
@@ -80,7 +84,7 @@ public class WalletServiceTest {
 
         Instant nextHour3 = nextHour2.plusSeconds(3600);
         Assertions.assertThat(service.getBalance(nextHour3, nextHour3.plusSeconds(3600)))
-            .isEqualTo(Collections.emptyList());
+            .isEqualTo(Collections.singletonList(walletEntry(nextHour3.plusSeconds(3600), "150.60")));
     }
 
     @Test
@@ -90,7 +94,7 @@ public class WalletServiceTest {
 
         Assertions.assertThat(service.getBalance(prevHour, instant))
             .isEqualTo(
-                Collections.singletonList(walletEntry(instant, "100.40")));
+                Collections.singletonList(walletEntry(instant, "125.5")));
 
         Instant prevTwoHours = prevHour.minusSeconds(3600);
         Assertions.assertThat(service.getBalance(prevTwoHours, instant))
@@ -99,11 +103,12 @@ public class WalletServiceTest {
                     walletEntry(instant, "125.50")));
 
         Assertions.assertThat(service.getBalance(prevTwoHours.minusSeconds(3600), prevTwoHours))
-            .isEqualTo(Collections.emptyList());
+            .isEqualTo(Collections.singletonList(walletEntry(prevTwoHours, "0.0")));
     }
 
     @Test
     public void shouldFillEmptyHoursWithCurrentBalance() {
+        repository.clear();
         BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T11:30:00.000Z"), amount));
@@ -121,6 +126,7 @@ public class WalletServiceTest {
                     walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
                     walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4"),
                     walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4")));
+        repository.clear();
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
@@ -128,6 +134,7 @@ public class WalletServiceTest {
     }
 
     private Instant addEntries(boolean reversedTime) {
+        repository.clear();
         Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
         Instant temp = now;
         BigDecimal amount = DateAndAmountUtils.toBigDecimal("25.10");

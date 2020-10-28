@@ -46,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = "spring.profiles.active=h2")
+    properties = "spring.profiles.active=in-memory")
 @Transactional
 class WalletControllerTest {
     private final static String ENTRY = "/api/wallet/add-entry";
@@ -119,11 +119,13 @@ class WalletControllerTest {
 
     @Test
     public void balanceShouldSuccessfullyRertrieveEntries() throws Exception {
+        repository.clear();
         MvcResult mvcResult = postJsonSuccess(BALANCE,
             new BalanceRequest(Instant.parse("2020-10-11T10:30:00Z").atZone(ZoneOffset.UTC),
                 Instant.parse("2020-10-11T11:45:00Z").atZone(ZoneOffset.UTC)));
-        Assertions.assertThat(readJson(mvcResult, List.class))
-            .isEqualTo(Collections.emptyList());
+        Assertions.assertThat(readJson(mvcResult, new TypeReference<List<WalletEntryResponse>>() {
+        })).isEqualTo(Collections.singletonList(new WalletEntryResponse(Instant.parse("2020-10-11T11:00:00Z")
+            .atZone(ZoneId.of("UTC")), 0.0)));
 
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
             DateAndAmountUtils.toBigDecimal("10.1")));
@@ -133,8 +135,9 @@ class WalletControllerTest {
         mvcResult = postJsonSuccess(BALANCE,
             new BalanceRequest(Instant.parse("2020-10-11T11:30:00Z").atZone(ZoneOffset.UTC),
                 Instant.parse("2020-10-11T12:45:00Z").atZone(ZoneOffset.UTC)));
-        Assertions.assertThat(readJson(mvcResult, List.class))
-            .isEqualTo(Collections.emptyList());
+        Assertions.assertThat(readJson(mvcResult, new TypeReference<List<WalletEntryResponse>>() {
+        })).isEqualTo(Collections.singletonList(new WalletEntryResponse(Instant.parse("2020-10-11T12:00:00Z")
+            .atZone(ZoneId.of("UTC")), 0.0)));
 
         mvcResult = postJsonSuccess(BALANCE,
             new BalanceRequest(Instant.parse("2020-10-20T12:30:00Z").atZone(ZoneOffset.UTC),
@@ -142,10 +145,12 @@ class WalletControllerTest {
         Assertions.assertThat(readJson(mvcResult, new TypeReference<List<WalletEntryResponse>>() {
         })).isEqualTo(Collections.singletonList(
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3)));
+        repository.clear();
     }
 
     @Test
-    public void balanceShouldSuccessfullySkipEmptyHourss() throws Exception {
+    public void balanceShouldSuccessfullyFillEmptyHourss() throws Exception {
+        repository.clear();
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
             DateAndAmountUtils.toBigDecimal("10.1")));
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
@@ -162,11 +167,13 @@ class WalletControllerTest {
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T14:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 32.5)));
+        repository.clear();
     }
 
 
     @Test
     public void balanceShouldProcessOtherTimeZones() throws Exception {
+        repository.clear();
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:10:00Z"),
             DateAndAmountUtils.toBigDecimal("10.1")));
         repository.addEntry(new WalletEntry(Instant.parse("2020-10-20T12:15:00Z"),
@@ -183,6 +190,7 @@ class WalletControllerTest {
             new WalletEntryResponse(Instant.parse("2020-10-20T13:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T14:00:00Z").atZone(ZoneId.of("UTC")), 21.3),
             new WalletEntryResponse(Instant.parse("2020-10-20T15:00:00Z").atZone(ZoneId.of("UTC")), 32.5)));
+        repository.clear();
     }
 
 

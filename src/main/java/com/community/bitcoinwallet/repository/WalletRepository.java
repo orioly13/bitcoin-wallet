@@ -12,4 +12,6 @@ public interface WalletRepository {
     List<WalletEntry> getEntries(Instant fromInclusive, Instant to);
 
 
+    void clear();
+
 }

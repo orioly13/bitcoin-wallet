@@ -25,6 +25,7 @@ public abstract class GenericRepositoryTest {
 
     @Test
     public void shouldAddAndReturnEntries() {
+        repository.clear();
         WalletEntry walletEntry1 = walletEntry(Instant.parse("2020-10-01T11:00:00.000Z"),
             "11.00");
         WalletEntry walletEntry2 = walletEntry(Instant.parse("2020-10-01T11:00:10.000Z"), "12.00");
@@ -49,6 +50,7 @@ public abstract class GenericRepositoryTest {
         Assertions.assertThat(repository.getEntries(Instant.parse("2020-10-01T10:00:00.000Z"),
             Instant.parse("2020-10-01T11:00:00.000Z")))
             .isEqualTo(Collections.emptyList());
+        repository.clear();
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
