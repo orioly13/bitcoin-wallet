@@ -117,9 +117,9 @@ public class H2WalletRepository implements WalletRepository {
     @Override
     @Transactional
     public void clear() {
-        jdbcTemplate.execute(String.format(CLEAR, WALLET), ps -> null);
-        jdbcTemplate.execute(String.format(CLEAR, BALANCE), ps -> null);
-        jdbcTemplate.execute(String.format(CLEAR, BALANCE_QUEUE), ps -> null);
+        jdbcTemplate.update(String.format(CLEAR, WALLET), Collections.emptyMap());
+        jdbcTemplate.update(String.format(CLEAR, BALANCE), Collections.emptyMap());
+        jdbcTemplate.update(String.format(CLEAR, BALANCE_QUEUE), Collections.emptyMap());
     }
 
     @Transactional
@@ -130,7 +130,7 @@ public class H2WalletRepository implements WalletRepository {
             incrementBalancesFromEntry(res.get(0));
             Long id = jdbcTemplate.queryForObject(SELECT_ID_FROM_QUEUE, Collections.emptyMap(),
                 (rs, rowNum) -> rs.getLong("id"));
-            jdbcTemplate.execute(DELETE_FROM_QUEUE, Map.of("id", id), ps -> null);
+            jdbcTemplate.update(DELETE_FROM_QUEUE, Map.of("id", id));
         }
     }
 

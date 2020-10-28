@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = "spring.profiles.active=in-memory")
+    properties = {"spring.profiles.active=in-memory","bitcoin-wallet.balance.async-balance=false"})
 @Transactional
 public class InMemoryWalletRepositoryTest extends GenericRepositoryTest {
 
