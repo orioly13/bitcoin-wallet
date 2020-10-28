@@ -45,21 +45,24 @@ class DateAndAmountUtilsTest {
     @Test
     public void shouldConvertDoubleToBigDecimalCorrectlry() {
         Assertions.assertThat(DateAndAmountUtils.toBigDecimal(0))
-            .isEqualTo(new BigDecimal("0.00"));
+            .isEqualTo(new BigDecimal("0.00000000"));
         Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12))
-            .isEqualTo(new BigDecimal("12.00"));
+            .isEqualTo(new BigDecimal("12.00000000"));
         Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.1))
-            .isEqualTo(new BigDecimal("12.10"));
+            .isEqualTo(new BigDecimal("12.10000000"));
         Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.11))
-            .isEqualTo(new BigDecimal("12.11"));
-        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.111))
-            .isEqualTo(new BigDecimal("12.11"));
-        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.114))
-            .isEqualTo(new BigDecimal("12.11"));
-        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.115))
-            .isEqualTo(new BigDecimal("12.12"));
-        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.116))
-            .isEqualTo(new BigDecimal("12.12"));
+            .isEqualTo(new BigDecimal("12.11000000"));
+        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.111_111_11))
+            .isEqualTo(new BigDecimal("12.11111111"));
+
+        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.111_111_111))
+            .isEqualTo(new BigDecimal("12.11111111"));
+        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.111_111_114))
+            .isEqualTo(new BigDecimal("12.11111111"));
+        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.111_111_115))
+            .isEqualTo(new BigDecimal("12.11111112"));
+        Assertions.assertThat(DateAndAmountUtils.toBigDecimal(12.111_111_116))
+            .isEqualTo(new BigDecimal("12.11111112"));
     }
 
 }

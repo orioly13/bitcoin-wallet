@@ -5,8 +5,8 @@ CREATE SEQUENCE SEQ_ID;
 CREATE TABLE PUBLIC.WALLET(
    ID bigint default SEQ_ID.nextval primary key,
    TS bigint not null,
-   DOLLARS bigint not null,
-   CENTS int not null
+   BITCOINS bigint not null,
+   B_CENTS bigint not null
 );
 
 --changeset prediger:create_wallet_timestamp_index

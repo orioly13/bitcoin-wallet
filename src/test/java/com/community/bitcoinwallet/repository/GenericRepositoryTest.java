@@ -1,11 +1,13 @@
 package com.community.bitcoinwallet.repository;
 
 import com.community.bitcoinwallet.model.WalletEntry;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,7 +25,8 @@ public abstract class GenericRepositoryTest {
 
     @Test
     public void shouldAddAndReturnEntries() {
-        WalletEntry walletEntry1 = walletEntry(Instant.parse("2020-10-01T11:00:00.000Z"), "11.00");
+        WalletEntry walletEntry1 = walletEntry(Instant.parse("2020-10-01T11:00:00.000Z"),
+            "11.00");
         WalletEntry walletEntry2 = walletEntry(Instant.parse("2020-10-01T11:00:10.000Z"), "12.00");
         WalletEntry walletEntry3 = walletEntry(Instant.parse("2020-10-01T11:00:20.000Z"), "13.00");
         WalletEntry walletEntry4 = walletEntry(Instant.parse("2020-10-01T11:00:30.000Z"), "14.00");
@@ -49,7 +52,7 @@ public abstract class GenericRepositoryTest {
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
-        WalletEntry walletEntry = new WalletEntry(instant, new BigDecimal(amount));
+        WalletEntry walletEntry = new WalletEntry(instant, DateAndAmountUtils.toBigDecimal(amount));
         repository.addEntry(walletEntry);
         return walletEntry;
     }

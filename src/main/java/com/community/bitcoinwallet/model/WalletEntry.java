@@ -17,4 +17,12 @@ public class WalletEntry implements Comparable<WalletEntry> {
     public int compareTo(WalletEntry o) {
         return datetime.compareTo(o.datetime);
     }
+
+    @Override
+    public String toString() {
+        return "WalletEntry(" +
+            "datetime=" + datetime +
+            ", amount=" + (amount == null ? null : amount.stripTrailingZeros()) +
+            ')';
+    }
 }

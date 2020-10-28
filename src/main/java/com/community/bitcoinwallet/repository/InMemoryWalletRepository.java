@@ -28,9 +28,13 @@ public class InMemoryWalletRepository implements WalletRepository {
         return entries.stream()
             .filter(entry -> {
                 Instant datetime = entry.getDatetime();
-                return (datetime.equals(fromInclusive) ||
-                    datetime.isAfter(fromInclusive)) && datetime.isBefore(toExclusive);
+                return datetime.isBefore(toExclusive);
             })
             .collect(Collectors.toList());
+    }
+
+
+    public void clear() {
+        entries.clear();
     }
 }
