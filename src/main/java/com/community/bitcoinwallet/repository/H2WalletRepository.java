@@ -94,7 +94,7 @@ public class H2WalletRepository {
     }
 
     public Optional<Instant> getLastBalanceTs() {
-        return jdbcTemplate.query("select MAX(ts) ts_max from BALANCE " +
+        return jdbcTemplate.query("select MAX(ts) ts_max from WALLET " +
             "group by 1", Collections.emptyMap(), (rs, rowNum) -> Instant.ofEpochMilli(rs.getLong("ts_max")))
             .stream().findFirst();
     }

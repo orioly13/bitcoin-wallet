@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 public class WalletServiceTest extends SpringTest {
 
@@ -21,6 +22,8 @@ public class WalletServiceTest extends SpringTest {
 
     @Autowired
     private WalletService service;
+    @Autowired
+    private BalanceUpdaterService balanceUpdaterService;
     @Autowired
     private H2WalletRepository repository;
 
@@ -65,23 +68,30 @@ public class WalletServiceTest extends SpringTest {
         service.getBalanceFull(now, now.plusSeconds(3600));
     }
 
+    private void assertSyncAndAsyncBalances(Instant from, Instant to,
+                                            List<WalletEntry> expecetedResult) {
+        List<WalletEntry> syncRes = service.getBalanceFull(from, to, true);
+        Assertions.assertThat(syncRes).isEqualTo(expecetedResult);
+        balanceUpdaterService.updateBalances(false);
+        List<WalletEntry> asyncRes = service.getBalanceFull(from, to, false);
+        Assertions.assertThat(asyncRes).isEqualTo(expecetedResult);
+    }
+
     @Test
     public void shouldComputeBalanceForAGivenTimeFrame() {
         Instant instant = addEntries(false);
         Instant nextHour = instant.plusSeconds(3600);
         Instant nextHour2 = nextHour.plusSeconds(3600);
-        Assertions.assertThat(service.getBalanceFull(instant, nextHour))
-            .isEqualTo(
-                Collections.singletonList(walletEntry(nextHour, "100.40")));
+        assertSyncAndAsyncBalances(instant, nextHour,
+            Collections.singletonList(walletEntry(nextHour, "100.40")));
 
-        Assertions.assertThat(service.getBalanceFull(instant, nextHour2))
-            .isEqualTo(
-                Arrays.asList(walletEntry(nextHour, "100.40"),
-                    walletEntry(nextHour2, "150.60")));
+        assertSyncAndAsyncBalances(instant, nextHour2,
+            Arrays.asList(walletEntry(nextHour, "100.40"),
+                walletEntry(nextHour2, "150.60")));
 
         Instant nextHour3 = nextHour2.plusSeconds(3600);
-        Assertions.assertThat(service.getBalanceFull(nextHour3, nextHour3.plusSeconds(3600)))
-            .isEqualTo(Collections.singletonList(walletEntry(nextHour3.plusSeconds(3600), "150.60")));
+        assertSyncAndAsyncBalances(nextHour3, nextHour3.plusSeconds(3600),
+            Collections.singletonList(walletEntry(nextHour3.plusSeconds(3600), "150.60")));
     }
 
     @Test
@@ -89,18 +99,16 @@ public class WalletServiceTest extends SpringTest {
         Instant instant = addEntries(true);
         Instant prevHour = instant.minusSeconds(3600);
 
-        Assertions.assertThat(service.getBalanceFull(prevHour, instant))
-            .isEqualTo(
-                Collections.singletonList(walletEntry(instant, "125.5")));
+        assertSyncAndAsyncBalances(prevHour, instant,
+            Collections.singletonList(walletEntry(instant, "125.5")));
 
         Instant prevTwoHours = prevHour.minusSeconds(3600);
-        Assertions.assertThat(service.getBalanceFull(prevTwoHours, instant))
-            .isEqualTo(
-                Arrays.asList(walletEntry(prevHour, "25.10"),
-                    walletEntry(instant, "125.50")));
+        assertSyncAndAsyncBalances(prevTwoHours, instant,
+            Arrays.asList(walletEntry(prevHour, "25.10"),
+                walletEntry(instant, "125.50")));
 
-        Assertions.assertThat(service.getBalanceFull(prevTwoHours.minusSeconds(3600), prevTwoHours))
-            .isEqualTo(Collections.singletonList(walletEntry(prevTwoHours, "0.0")));
+        assertSyncAndAsyncBalances(prevTwoHours.minusSeconds(3600), prevTwoHours,
+            Collections.singletonList(walletEntry(prevTwoHours, "0.0")));
     }
 
     @Test
@@ -111,18 +119,17 @@ public class WalletServiceTest extends SpringTest {
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T14:15:00.000Z"), amount));
 
-        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T09:00:00.000Z"),
-            Instant.parse("2020-09-01T17:00:00.000Z")))
-            .isEqualTo(
-                Arrays.asList(
-                    walletEntry(Instant.parse("2020-09-01T10:00:00.000Z"), "0.0"),
-                    walletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), "0.0"),
-                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "50.20"),
-                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "50.20"),
-                    walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
-                    walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4"),
-                    walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4"),
-                    walletEntry(Instant.parse("2020-09-01T17:00:00.000Z"), "100.4")));
+        assertSyncAndAsyncBalances(Instant.parse("2020-09-01T09:00:00.000Z"),
+            Instant.parse("2020-09-01T17:00:00.000Z"),
+            Arrays.asList(
+                walletEntry(Instant.parse("2020-09-01T10:00:00.000Z"), "0.0"),
+                walletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), "0.0"),
+                walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "50.20"),
+                walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "50.20"),
+                walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
+                walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4"),
+                walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4"),
+                walletEntry(Instant.parse("2020-09-01T17:00:00.000Z"), "100.4")));
     }
 
     @Test
@@ -134,36 +141,32 @@ public class WalletServiceTest extends SpringTest {
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T12:00:00.000Z"),
             DateAndAmountUtils.toBigDecimal("1")));
 
-        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T11:00:00.000Z"),
-            Instant.parse("2020-09-01T13:00:00.000Z")))
-            .isEqualTo(
-                Arrays.asList(
-                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
-                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+        assertSyncAndAsyncBalances(Instant.parse("2020-09-01T11:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z"),
+            Arrays.asList(
+                walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
+                walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
 
-        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T10:00:00.000Z"),
-            Instant.parse("2020-09-01T13:00:00.000Z")))
-            .isEqualTo(
-                Arrays.asList(
-                    walletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), "0"),
-                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
-                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+        assertSyncAndAsyncBalances(Instant.parse("2020-09-01T10:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z"),
+            Arrays.asList(
+                walletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), "0"),
+                walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
+                walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
 
-        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T12:00:00.000Z"),
-            Instant.parse("2020-09-01T13:00:00.000Z")))
-            .isEqualTo(
-                Arrays.asList(
-                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+        assertSyncAndAsyncBalances(Instant.parse("2020-09-01T12:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z"),
+            Arrays.asList(
+                walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
     }
 
     @Test
     public void shouldReturnZeroesIfBalanceIsEmpty() {
-        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T11:00:00.000Z"),
-            Instant.parse("2020-09-01T13:00:00.000Z")))
-            .isEqualTo(
-                Arrays.asList(
-                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "0"),
-                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "0")));
+        assertSyncAndAsyncBalances(Instant.parse("2020-09-01T11:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z"),
+            Arrays.asList(
+                walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "0"),
+                walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "0")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {

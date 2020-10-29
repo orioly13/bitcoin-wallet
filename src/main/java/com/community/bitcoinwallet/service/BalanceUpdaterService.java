@@ -3,6 +3,7 @@ package com.community.bitcoinwallet.service;
 
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.repository.H2WalletRepository;
+import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,7 +21,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.community.bitcoinwallet.util.DateAndAmountUtils.atEndOfHour;
 import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
 
 
@@ -62,7 +62,9 @@ public class BalanceUpdaterService {
         WalletEntry event = firstEventAndClearQueue.get();
         // 2)
         Instant from = atStartOfHour(event.getDatetime());
-        Instant to = repository.getLastBalanceTs().orElse(from.plus(1, ChronoUnit.HOURS));
+        Instant to = repository.getLastBalanceTs()
+            .map(DateAndAmountUtils::atEndOfHour)
+            .orElse(from.plus(1, ChronoUnit.HOURS));
         if (!to.isAfter(from)) {
             to = from.plus(1, ChronoUnit.HOURS);
         }
@@ -71,7 +73,12 @@ public class BalanceUpdaterService {
         long step = wholeHours / threadCount <= 1 ? 1 : wholeHours / threadCount;
         Instant start = from;
         for (int i = 0; i < wholeHours; i += step) {
-            ranges.add(new Range(start, start.plus(step, ChronoUnit.HOURS)));
+            Instant end = start.plus(step, ChronoUnit.HOURS);
+            ranges.add(new Range(start, end));
+            start = end;
+        }
+        if (wholeHours > threadCount && wholeHours % threadCount > 1) {
+            ranges.add(new Range(start, start.plus(wholeHours % threadCount, ChronoUnit.HOURS)));
         }
         processRangesSequentially(ranges);
     }
