@@ -1,6 +1,7 @@
 package com.community.bitcoinwallet.model;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
@@ -8,7 +9,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
-@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class WalletEntry implements Comparable<WalletEntry> {
     Instant datetime;
     BigDecimal amount;

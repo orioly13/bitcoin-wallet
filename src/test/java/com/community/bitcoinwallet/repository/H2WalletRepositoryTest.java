@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = "spring.profiles.active=h2")
+    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
 @Transactional
 public class H2WalletRepositoryTest extends GenericRepositoryTest {
 

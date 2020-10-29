@@ -12,7 +12,6 @@ import com.community.bitcoinwallet.service.WalletService;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import liquibase.pro.packaged.B;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -46,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = "spring.profiles.active=in-memory")
+    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
 @Transactional
 class WalletControllerTest {
     private final static String ENTRY = "/api/wallet/add-entry";

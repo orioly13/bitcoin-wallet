@@ -20,7 +20,7 @@ import java.util.Collections;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = "spring.profiles.active=in-memory")
+    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
 @Transactional
 public class WalletServiceTest {
 
@@ -129,7 +129,8 @@ public class WalletServiceTest {
                     walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "50.20"),
                     walletEntry(Instant.parse("2020-09-01T14:00:00.000Z"), "75.30"),
                     walletEntry(Instant.parse("2020-09-01T15:00:00.000Z"), "100.4"),
-                    walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4")));
+                    walletEntry(Instant.parse("2020-09-01T16:00:00.000Z"), "100.4"),
+                    walletEntry(Instant.parse("2020-09-01T17:00:00.000Z"), "100.4")));
     }
 
     @Test
@@ -147,6 +148,30 @@ public class WalletServiceTest {
                 Arrays.asList(
                     walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
                     walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T10:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z")))
+            .isEqualTo(
+                Arrays.asList(
+                    walletEntry(Instant.parse("2020-09-01T11:00:00.000Z"), "0"),
+                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
+                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T12:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z")))
+            .isEqualTo(
+                Arrays.asList(
+                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
+    }
+
+    @Test
+    public void shouldReturnZeroesIfBalanceIsEmpty() {
+        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T11:00:00.000Z"),
+            Instant.parse("2020-09-01T13:00:00.000Z")))
+            .isEqualTo(
+                Arrays.asList(
+                    walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "0"),
+                    walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "0")));
     }
 
     private WalletEntry walletEntry(Instant instant, String amount) {
