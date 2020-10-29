@@ -4,6 +4,5 @@
 -- index should be created by default, since it's a primary key
 CREATE TABLE PUBLIC.BALANCE(
    TS bigint not null primary key,
-   BITCOINS bigint not null,
-   SATOSHI bigint not null
+   BITCOINS DECIMAL(15,8)  not null
 );
