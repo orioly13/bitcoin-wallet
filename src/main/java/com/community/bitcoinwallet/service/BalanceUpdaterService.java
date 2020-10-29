@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.annotation.PreDestroy;
 import java.time.Instant;
@@ -30,7 +31,6 @@ public class BalanceUpdaterService {
     WalletService walletService;
     ScheduledExecutorService updateBalanceTaskScheduler;
     ExecutorService parallelBalanceUpdateExecutor;
-    CompletionService<Void> completionService;
     int threadCount;
 
 
@@ -43,7 +43,6 @@ public class BalanceUpdaterService {
         this.updateBalanceTaskScheduler = updateBalanceTaskSheduler;
         this.parallelBalanceUpdateExecutor = parallelBalanceUpdateExecutor;
         this.threadCount = threadCount;
-        this.completionService = new ExecutorCompletionService<>(parallelBalanceUpdateExecutor);
         updateBalanceTaskSheduler.scheduleAtFixedRate(() -> updateBalances(true),
             scheduledUpdatePeriodMillis, scheduledUpdatePeriodMillis, TimeUnit.MILLISECONDS);
     }
@@ -80,10 +79,15 @@ public class BalanceUpdaterService {
             ranges.add(new Range(start, start.plus(wholeHours % threadCount, ChronoUnit.HOURS)));
         }
         if (parallel) {
-            processRangesInParallel(ranges);
+            try {
+                processRangesInParallel(ranges);
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            }
         } else {
             processRangesSequentially(ranges);
         }
+        log.info("Finished processing event {}", event);
     }
 
     private void processRangesSequentially(List<Range> ranges) {
@@ -104,14 +108,13 @@ public class BalanceUpdaterService {
                 repository.mergeIntoBalances(
                     getBalancesToMerge(fromExclusive, toInclusive, addNewBalance))));
         }
-        int finished = 0;
-        while (finished < futures.size()) {
-            try {
-                completionService.take();
-                finished++;
-            } catch (Exception e) {
-                log.error("Problem occurred on balance update", e);
+        try {
+            for (Future f : futures) {
+                f.get();
             }
+        } catch (Exception e) {
+            log.error("Problem occurred on balance update", e);
+            throw new RuntimeException(e);
         }
     }
 
