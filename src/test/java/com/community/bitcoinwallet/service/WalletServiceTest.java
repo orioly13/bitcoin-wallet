@@ -1,5 +1,6 @@
 package com.community.bitcoinwallet.service;
 
+import com.community.bitcoinwallet.BitcoinWalletApplication;
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.repository.WalletRepository;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,8 +19,10 @@ import java.util.Arrays;
 import java.util.Collections;
 
 @RunWith(SpringRunner.class)
+@SpringBootTest(classes = {BitcoinWalletApplication.class},
+    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
 @Transactional
-public abstract class WalletServiceTest {
+public class WalletServiceTest {
 
     private static final int COUNT_ENTRIES = 6;
     private static final int QUARTER_OF_HOUR_SECONDS = 15 * 60;
