@@ -1,28 +1,20 @@
 package com.community.bitcoinwallet.service;
 
-import com.community.bitcoinwallet.BitcoinWalletApplication;
+import com.community.bitcoinwallet.SpringTest;
 import com.community.bitcoinwallet.model.WalletEntry;
-import com.community.bitcoinwallet.repository.WalletRepository;
+import com.community.bitcoinwallet.repository.H2WalletRepository;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
-@Transactional
-public class WalletServiceTest {
+public class WalletServiceTest extends SpringTest {
 
     private static final int COUNT_ENTRIES = 6;
     private static final int QUARTER_OF_HOUR_SECONDS = 15 * 60;
@@ -30,7 +22,7 @@ public class WalletServiceTest {
     @Autowired
     private WalletService service;
     @Autowired
-    private WalletRepository repository;
+    private H2WalletRepository repository;
 
     @BeforeEach
     private void setUp() {

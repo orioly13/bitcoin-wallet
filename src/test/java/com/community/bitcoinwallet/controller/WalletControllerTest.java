@@ -1,13 +1,13 @@
 package com.community.bitcoinwallet.controller;
 
-import com.community.bitcoinwallet.BitcoinWalletApplication;
+import com.community.bitcoinwallet.SpringTest;
 import com.community.bitcoinwallet.model.WalletEntry;
 import com.community.bitcoinwallet.model.requests.AddWalletEntryRequest;
 import com.community.bitcoinwallet.model.requests.BalanceRequest;
 import com.community.bitcoinwallet.model.response.GeneralResponseData;
 import com.community.bitcoinwallet.model.response.Status;
 import com.community.bitcoinwallet.model.response.WalletEntryResponse;
-import com.community.bitcoinwallet.repository.WalletRepository;
+import com.community.bitcoinwallet.repository.H2WalletRepository;
 import com.community.bitcoinwallet.service.WalletService;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,16 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -42,11 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @AutoConfigureMockMvc
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
-@Transactional
-class WalletControllerTest {
+class WalletControllerTest extends SpringTest {
     private final static String ENTRY = "/api/wallet/add-entry";
     private final static String BALANCE = "/api/wallet/balance";
 
@@ -59,7 +51,7 @@ class WalletControllerTest {
     @Autowired
     private WalletService service;
     @Autowired
-    private WalletRepository repository;
+    private H2WalletRepository repository;
 
     @BeforeEach
     public void setUp() {

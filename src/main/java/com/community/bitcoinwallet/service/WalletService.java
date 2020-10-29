@@ -2,7 +2,7 @@ package com.community.bitcoinwallet.service;
 
 
 import com.community.bitcoinwallet.model.WalletEntry;
-import com.community.bitcoinwallet.repository.WalletRepository;
+import com.community.bitcoinwallet.repository.H2WalletRepository;
 import com.community.bitcoinwallet.util.DateAndAmountUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -12,35 +12,70 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.community.bitcoinwallet.util.DateAndAmountUtils.atEndOfHour;
-import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
+import static com.community.bitcoinwallet.util.DateAndAmountUtils.*;
 
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class WalletService {
 
-    WalletRepository repository;
+    H2WalletRepository repository;
 
     public void addEntry(WalletEntry entry) {
         validateWalletEntry(entry);
         repository.addEntry(entry);
     }
 
-    /**
-     * Uses naive approach of iterating through the whole queue.
-     * Should NOT be used on a production load.
-     */
     public List<WalletEntry> getBalance(Instant from, Instant to) {
-        validateInstants(from, to);
-
-        return groupAmountsByHour(repository.getBalancesByHour(from, to),
-            DateAndAmountUtils.atEndOfHour(from), DateAndAmountUtils.atStartOfHour(to));
+        return getBalance(from, to, true);
     }
 
-    private List<WalletEntry> groupAmountsByHour(Collection<WalletEntry> entries,
-                                                 Instant fromAtEndOfHour,
-                                                 Instant toAtStartOfHour) {
+    public List<WalletEntry> getBalance(Instant from, Instant to, boolean sync) {
+        validateInstants(from, to);
+        return fillMissingStartOfHours(getBalancesByHour(from, to, sync),
+            atEndOfHour(from), atStartOfHour(to));
+    }
+
+    protected List<WalletEntry> getBalancesByHour(Instant from, Instant to) {
+        return getBalancesByHour(from, to, true);
+    }
+
+    protected List<WalletEntry> getBalancesByHour(Instant from, Instant to, boolean sync) {
+        return sync ? getBalancesByHourSync(from, to) : getBalancesByHourAsync(from, to);
+    }
+
+    private List<WalletEntry> getBalancesByHourSync(Instant from, Instant to) {
+        Instant fromAtStart = atStartOfHour(from);
+        Instant toStart = atStartOfHour(to);
+        WalletEntry beforeFrom = repository.getWalletSumBeforeFrom(fromAtStart);
+        BigDecimal[] incrementHolder = new BigDecimal[]{beforeFrom.getAmount()};
+        List<WalletEntry> balanceByHour = repository.getWalletSumInRangeByHour(fromAtStart, toStart)
+            .stream()
+            .map(e -> {
+                BigDecimal increment = incrementHolder[0];
+                BigDecimal amount = e.getAmount().add(increment);
+                incrementHolder[0] = increment.add(e.getAmount());
+                return new WalletEntry(e.getDatetime().plus(1, ChronoUnit.HOURS), amount);
+            })
+            .collect(Collectors.toCollection(LinkedList::new));
+        balanceByHour.add(0, beforeFrom);
+        return balanceByHour;
+    }
+
+    protected List<WalletEntry> getBalancesByHourAsync(Instant from, Instant to) {
+        List<WalletEntry> res = new LinkedList<>(repository.getBalancesWithinRange(from, to));
+        Instant fromAtStartOfHour = atStartOfHour(from);
+        if (res.isEmpty() || res.get(0).getDatetime().isAfter(fromAtStartOfHour)) {
+            res.add(0, repository.getBalanceBeforeRange(from).orElse(
+                new WalletEntry(fromAtStartOfHour, toBigDecimal("0.0"))));
+        }
+        return res;
+    }
+
+    private List<WalletEntry> fillMissingStartOfHours(Collection<WalletEntry> entries,
+                                                      Instant fromAtEndOfHour,
+                                                      Instant toAtStartOfHour) {
         List<WalletEntry> res = new ArrayList<>();
         Iterator<WalletEntry> iterator = entries.iterator();
         WalletEntry currentDiff = iterator.next();
