@@ -28,7 +28,7 @@ public class H2WalletRepository {
     public void addEntry(WalletEntry entry) {
         Map<String, Object> values = entryToMap(entry);
         jdbcTemplate.update(String.format(INSERT, WALLET), values);
-        jdbcTemplate.update("merge into BALANCE_UPDATE_QUEUE(ts,bitcoins) values(:ts,:bitcoins)", values);
+        jdbcTemplate.update(String.format(INSERT, BALANCE_QUEUE), values);
     }
 
     @Transactional

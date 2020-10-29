@@ -108,6 +108,7 @@ public class BalanceUpdaterService {
         while (finished < futures.size()) {
             try {
                 completionService.take();
+                finished++;
             } catch (Exception e) {
                 log.error("Problem occurred on balance update", e);
             }
