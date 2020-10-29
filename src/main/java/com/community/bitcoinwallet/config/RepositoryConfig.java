@@ -1,7 +1,6 @@
 package com.community.bitcoinwallet.config;
 
 import com.community.bitcoinwallet.repository.H2WalletRepository;
-import com.community.bitcoinwallet.repository.InMemoryWalletRepository;
 import com.community.bitcoinwallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,14 +24,7 @@ public class RepositoryConfig {
     private final H2JdbcConfig h2JdbcConfig;
 
     @Bean("walletRepository")
-    @Profile("in-memory")
-    public WalletRepository walletRepositoryInMemory() {
-        return new InMemoryWalletRepository(asyncBalance);
-    }
-
-    @Bean("walletRepository")
-    @Profile("h2")
-    public WalletRepository walletRepositoryH2() {
+    public WalletRepository walletRepository() {
         return new H2WalletRepository(asyncBalance, h2JdbcConfig.h2NamedParameterJdbcTemplate(),
             updatePeriod, batchSize);
     }

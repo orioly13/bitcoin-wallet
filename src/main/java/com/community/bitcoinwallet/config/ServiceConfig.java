@@ -15,6 +15,6 @@ public class ServiceConfig {
 
     @Bean
     public WalletService walletService() {
-        return new WalletService(repositoryConfig.walletRepositoryInMemory());
+        return new WalletService(repositoryConfig.walletRepository());
     }
 }
