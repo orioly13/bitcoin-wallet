@@ -1,8 +1,10 @@
 package com.community.bitcoinwallet;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
-class BitcoinWalletApplicationTests extends SpringTest {
+@SpringBootTest
+class BitcoinWalletApplicationTests {
 
     @Test
     void contextLoads() {

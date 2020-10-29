@@ -27,28 +27,30 @@ public class WalletService {
         repository.addEntry(entry);
     }
 
-    public List<WalletEntry> getBalance(Instant from, Instant to) {
-        return getBalance(from, to, true);
+    public List<WalletEntry> getBalanceFull(Instant from, Instant to) {
+        return getBalanceFull(from, to, true);
     }
 
-    public List<WalletEntry> getBalance(Instant from, Instant to, boolean sync) {
+    public List<WalletEntry> getBalanceFull(Instant from, Instant to, boolean sync) {
         validateInstants(from, to);
-        return fillMissingStartOfHours(getBalancesByHour(from, to, sync),
+        return fillMissingStartOfHours(getBalancesWithHoles(from, to, sync),
             atEndOfHour(from), atStartOfHour(to));
     }
 
-    protected List<WalletEntry> getBalancesByHour(Instant from, Instant to) {
-        return getBalancesByHour(from, to, true);
+    public List<WalletEntry> getBalancesWithHoles(Instant from, Instant to) {
+        return getBalancesWithHoles(from, to, true);
     }
 
-    protected List<WalletEntry> getBalancesByHour(Instant from, Instant to, boolean sync) {
+    public List<WalletEntry> getBalancesWithHoles(Instant from, Instant to, boolean sync) {
         return sync ? getBalancesByHourSync(from, to) : getBalancesByHourAsync(from, to);
     }
 
     private List<WalletEntry> getBalancesByHourSync(Instant from, Instant to) {
         Instant fromAtStart = atStartOfHour(from);
         Instant toStart = atStartOfHour(to);
-        WalletEntry beforeFrom = repository.getWalletSumBeforeFrom(fromAtStart);
+        WalletEntry beforeFrom = repository.getWalletSumBeforeFrom(fromAtStart)
+            .map(w -> new WalletEntry(fromAtStart, w.getAmount()))
+            .orElse(new WalletEntry(fromAtStart, DateAndAmountUtils.toBigDecimal(0.0)));
         BigDecimal[] incrementHolder = new BigDecimal[]{beforeFrom.getAmount()};
         List<WalletEntry> balanceByHour = repository.getWalletSumInRangeByHour(fromAtStart, toStart)
             .stream()

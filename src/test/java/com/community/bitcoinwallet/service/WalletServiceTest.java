@@ -48,21 +48,21 @@ public class WalletServiceTest extends SpringTest {
     @Test
     public void getBalanceShouldThrowExceptionsIfIllegalEntyPassed() {
         Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
-        Assertions.assertThatThrownBy(() -> service.getBalance(null, now))
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(null, now))
             .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalance(now, null))
-            .isInstanceOf(IllegalArgumentException.class);
-
-        Assertions.assertThatThrownBy(() -> service.getBalance(now, now))
-            .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalance(now, now.minusNanos(1)))
-            .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalance(now, now.plusNanos(1)))
-            .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalance(now, now.plusSeconds(3599)))
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, null))
             .isInstanceOf(IllegalArgumentException.class);
 
-        service.getBalance(now, now.plusSeconds(3600));
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now))
+            .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.minusNanos(1)))
+            .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.plusNanos(1)))
+            .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.plusSeconds(3599)))
+            .isInstanceOf(IllegalArgumentException.class);
+
+        service.getBalanceFull(now, now.plusSeconds(3600));
     }
 
     @Test
@@ -70,17 +70,17 @@ public class WalletServiceTest extends SpringTest {
         Instant instant = addEntries(false);
         Instant nextHour = instant.plusSeconds(3600);
         Instant nextHour2 = nextHour.plusSeconds(3600);
-        Assertions.assertThat(service.getBalance(instant, nextHour))
+        Assertions.assertThat(service.getBalanceFull(instant, nextHour))
             .isEqualTo(
                 Collections.singletonList(walletEntry(nextHour, "100.40")));
 
-        Assertions.assertThat(service.getBalance(instant, nextHour2))
+        Assertions.assertThat(service.getBalanceFull(instant, nextHour2))
             .isEqualTo(
                 Arrays.asList(walletEntry(nextHour, "100.40"),
                     walletEntry(nextHour2, "150.60")));
 
         Instant nextHour3 = nextHour2.plusSeconds(3600);
-        Assertions.assertThat(service.getBalance(nextHour3, nextHour3.plusSeconds(3600)))
+        Assertions.assertThat(service.getBalanceFull(nextHour3, nextHour3.plusSeconds(3600)))
             .isEqualTo(Collections.singletonList(walletEntry(nextHour3.plusSeconds(3600), "150.60")));
     }
 
@@ -89,17 +89,17 @@ public class WalletServiceTest extends SpringTest {
         Instant instant = addEntries(true);
         Instant prevHour = instant.minusSeconds(3600);
 
-        Assertions.assertThat(service.getBalance(prevHour, instant))
+        Assertions.assertThat(service.getBalanceFull(prevHour, instant))
             .isEqualTo(
                 Collections.singletonList(walletEntry(instant, "125.5")));
 
         Instant prevTwoHours = prevHour.minusSeconds(3600);
-        Assertions.assertThat(service.getBalance(prevTwoHours, instant))
+        Assertions.assertThat(service.getBalanceFull(prevTwoHours, instant))
             .isEqualTo(
                 Arrays.asList(walletEntry(prevHour, "25.10"),
                     walletEntry(instant, "125.50")));
 
-        Assertions.assertThat(service.getBalance(prevTwoHours.minusSeconds(3600), prevTwoHours))
+        Assertions.assertThat(service.getBalanceFull(prevTwoHours.minusSeconds(3600), prevTwoHours))
             .isEqualTo(Collections.singletonList(walletEntry(prevTwoHours, "0.0")));
     }
 
@@ -111,7 +111,7 @@ public class WalletServiceTest extends SpringTest {
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), amount));
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T14:15:00.000Z"), amount));
 
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T09:00:00.000Z"),
+        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T09:00:00.000Z"),
             Instant.parse("2020-09-01T17:00:00.000Z")))
             .isEqualTo(
                 Arrays.asList(
@@ -134,14 +134,14 @@ public class WalletServiceTest extends SpringTest {
         service.addEntry(new WalletEntry(Instant.parse("2020-09-01T12:00:00.000Z"),
             DateAndAmountUtils.toBigDecimal("1")));
 
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T11:00:00.000Z"),
+        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T11:00:00.000Z"),
             Instant.parse("2020-09-01T13:00:00.000Z")))
             .isEqualTo(
                 Arrays.asList(
                     walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
                     walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
 
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T10:00:00.000Z"),
+        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T10:00:00.000Z"),
             Instant.parse("2020-09-01T13:00:00.000Z")))
             .isEqualTo(
                 Arrays.asList(
@@ -149,7 +149,7 @@ public class WalletServiceTest extends SpringTest {
                     walletEntry(Instant.parse("2020-09-01T12:00:00.000Z"), "3"),
                     walletEntry(Instant.parse("2020-09-01T13:00:00.000Z"), "4")));
 
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T12:00:00.000Z"),
+        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T12:00:00.000Z"),
             Instant.parse("2020-09-01T13:00:00.000Z")))
             .isEqualTo(
                 Arrays.asList(
@@ -158,7 +158,7 @@ public class WalletServiceTest extends SpringTest {
 
     @Test
     public void shouldReturnZeroesIfBalanceIsEmpty() {
-        Assertions.assertThat(service.getBalance(Instant.parse("2020-09-01T11:00:00.000Z"),
+        Assertions.assertThat(service.getBalanceFull(Instant.parse("2020-09-01T11:00:00.000Z"),
             Instant.parse("2020-09-01T13:00:00.000Z")))
             .isEqualTo(
                 Arrays.asList(
