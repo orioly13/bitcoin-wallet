@@ -10,6 +10,7 @@ import javax.annotation.PreDestroy;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -17,6 +18,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
+
+import static com.community.bitcoinwallet.util.DateAndAmountUtils.atEndOfHour;
+import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
 
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -41,8 +45,6 @@ public class InMemoryWalletRepository implements WalletRepository {
         entries.add(entry);
         if (asyncCalculation) {
             executorService.submit(() -> incrementBalancesFromEntry(entry));
-        } else {
-            incrementBalancesFromEntry(entry);
         }
     }
 
@@ -52,6 +54,45 @@ public class InMemoryWalletRepository implements WalletRepository {
      */
     @Override
     public List<WalletEntry> getBalancesByHour(Instant fromExclusive, Instant toInclusive) {
+        return asyncCalculation ? asyncApproach(fromExclusive, toInclusive) : syncApproach(fromExclusive, toInclusive);
+    }
+
+    private List<WalletEntry> syncApproach(Instant from, Instant to) {
+        Instant fromAtStart = atStartOfHour(from);
+        Instant toStart = DateAndAmountUtils.atStartOfHour(to);
+
+        WalletEntry beforeFrom = entries.stream().filter(walletEntry ->
+            walletEntry.getDatetime().isBefore(fromAtStart))
+            .reduce((walletEntry, walletEntry2) -> new WalletEntry(null,
+                walletEntry.getAmount().add(walletEntry2.getAmount())))
+            .map(walletEntry -> new WalletEntry(fromAtStart,
+                walletEntry.getAmount()))
+            .orElse(
+                new WalletEntry(fromAtStart, DateAndAmountUtils.toBigDecimal(0.0)));
+
+
+        BigDecimal[] incrementHolder = new BigDecimal[]{beforeFrom.getAmount()};
+        List<WalletEntry> balanceByHour = new LinkedList<>(entries.stream()
+            .filter(walletEntry -> (walletEntry.getDatetime().equals(fromAtStart) ||
+                walletEntry.getDatetime().isAfter(fromAtStart)) &&
+                (walletEntry.getDatetime().isBefore(toStart)))
+            .map(walletEntry -> new WalletEntry(atEndOfHour(walletEntry.getDatetime()), walletEntry.getAmount()))
+            .collect(Collectors.groupingBy(WalletEntry::getDatetime, LinkedHashMap::new,
+                Collectors.reducing(BigDecimal.ZERO, WalletEntry::getAmount, BigDecimal::add)))
+            .entrySet()
+            .stream()
+            .map(e -> {
+                BigDecimal increment = incrementHolder[0];
+                BigDecimal amount = e.getValue().add(increment);
+                incrementHolder[0] = increment.add(e.getValue());
+                return new WalletEntry(e.getKey(), amount);
+            })
+            .collect(Collectors.toList()));
+        balanceByHour.add(0, beforeFrom);
+        return balanceByHour;
+    }
+
+    private List<WalletEntry> asyncApproach(Instant fromExclusive, Instant toInclusive) {
         List<WalletEntry> res = balances.stream()
             .filter(entry -> {
                 Instant datetime = entry.getDatetime();
