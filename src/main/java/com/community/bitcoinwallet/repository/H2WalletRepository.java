@@ -9,8 +9,12 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PreDestroy;
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,17 +22,32 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
 
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class H2WalletRepository implements WalletRepository {
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
 
     public static final RowMapper<WalletEntry> ROW_MAPPER = (rs, rowNum) ->
         new WalletEntry(Instant.ofEpochMilli(rs.getLong("ts")),
             rs.getBigDecimal("bitcoins").setScale(8, RoundingMode.HALF_UP));
 
+    public static final RowMapper<WalletEntry> ROW_MAPPER_WITH_DATE = (rs, rowNum) ->
+        new WalletEntry(ZonedDateTime.parse(rs.getString("date_hour"), FORMATTER).toInstant(),
+            rs.getBigDecimal("bitcoins").setScale(8, RoundingMode.HALF_UP));
+
+    public static final RowMapper<WalletEntry> ROW_MAPPER_WITH_SUM = (rs, rowNum) ->
+        new WalletEntry(null, rs.getBigDecimal("bitcoins").setScale(8, RoundingMode.HALF_UP));
+
     private static final String WALLET = "WALLET";
     private static final String BALANCE = "BALANCE";
     private static final String BALANCE_QUEUE = "BALANCE_UPDATE_QUEUE";
+
+    private static final String TS_AT_START_OF_HOUR =
+        "FORMATDATETIME(DATEADD('MILLISECOND', ts, DATE '1970-01-01'),'YYYY-MM-dd HH:00:00+00:00')";
 
     private static final String SELECT_BALANCE_TIME_RANGE = "select ts,bitcoins from BALANCE " +
         "where (ts > :from and ts < :to) or ts = :to";
@@ -45,6 +64,15 @@ public class H2WalletRepository implements WalletRepository {
     private static final String SELECT_FIRST_BALANCE = "select ts, bitcoins c from BALANCE " +
         "order by ts " +
         "limit 1";
+
+    private static final String SELECT_BALANCE_SUM = "select SUM(bitcoins) as bitcoins from WALLET " +
+        "where ts < :ts " +
+        "group by 1";
+
+    private static final String SELECT_BALANCE_SUM_IN_RANGE = "select " +
+        TS_AT_START_OF_HOUR + " as date_hour, SUM(bitcoins) as bitcoins from WALLET " +
+        "where ts >= :from and ts < :to " +
+        " group by " + TS_AT_START_OF_HOUR;
 
     private static final String UPDATE_BALANCE = "update BALANCE set bitcoins=:bitcoins where" +
         " ts=:ts";
@@ -89,14 +117,45 @@ public class H2WalletRepository implements WalletRepository {
         jdbcTemplate.update(String.format(INSERT, WALLET), values);
         if (asyncBalanceCalculation) {
             jdbcTemplate.update(String.format(INSERT, BALANCE_QUEUE), values);
-        } else {
-            incrementBalancesFromEntry(entry);
         }
     }
 
     @Override
     public List<WalletEntry> getBalancesByHour(Instant fromExclusive, Instant toInclusive) {
-        return getBalancesByHourAsync(fromExclusive, toInclusive);
+        return asyncBalanceCalculation ? getBalancesByHourAsync(fromExclusive, toInclusive) :
+            getBalancesByHourSync(fromExclusive, toInclusive);
+    }
+
+    private List<WalletEntry> getBalancesByHourSync(Instant from, Instant to) {
+        Instant fromAtStart = atStartOfHour(from);
+        Instant toStart = atStartOfHour(to);
+        WalletEntry beforeFrom = getSumBeforeFrom(fromAtStart);
+        BigDecimal[] incrementHolder = new BigDecimal[]{beforeFrom.getAmount()};
+        List<WalletEntry> balanceByHour = getSumInRangeByHour(fromAtStart, toStart)
+            .stream()
+            .map(e -> {
+                BigDecimal increment = incrementHolder[0];
+                BigDecimal amount = e.getAmount().add(increment);
+                incrementHolder[0] = increment.add(e.getAmount());
+                return new WalletEntry(e.getDatetime().plus(1, ChronoUnit.HOURS), amount);
+            })
+            .collect(Collectors.toCollection(LinkedList::new));
+        balanceByHour.add(0, beforeFrom);
+        return balanceByHour;
+    }
+
+    private List<WalletEntry> getSumInRangeByHour(Instant fromAtStart, Instant toAtStart) {
+        return jdbcTemplate.query(SELECT_BALANCE_SUM_IN_RANGE,
+            Map.of("from", fromAtStart.toEpochMilli(),
+                "to", toAtStart.toEpochMilli()), ROW_MAPPER_WITH_DATE);
+    }
+
+    private WalletEntry getSumBeforeFrom(Instant fromAtStart) {
+        List<WalletEntry> ts = jdbcTemplate.query(SELECT_BALANCE_SUM,
+            Map.of("ts", fromAtStart.toEpochMilli()), ROW_MAPPER_WITH_SUM);
+        return ts.stream().findFirst()
+            .map(w -> new WalletEntry(fromAtStart, w.getAmount()))
+            .orElse(new WalletEntry(fromAtStart, DateAndAmountUtils.toBigDecimal(0.0)));
     }
 
     private List<WalletEntry> getBalancesByHourAsync(Instant fromExclusive, Instant toInclusive) {
