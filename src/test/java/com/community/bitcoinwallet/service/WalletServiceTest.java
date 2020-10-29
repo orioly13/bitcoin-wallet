@@ -51,21 +51,21 @@ public class WalletServiceTest extends SpringTest {
     @Test
     public void getBalanceShouldThrowExceptionsIfIllegalEntyPassed() {
         Instant now = Instant.parse("2020-09-01T11:00:00.000Z");
-        Assertions.assertThatThrownBy(() -> service.getBalanceFull(null, now))
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(null, now, true))
             .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, null))
-            .isInstanceOf(IllegalArgumentException.class);
-
-        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now))
-            .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.minusNanos(1)))
-            .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.plusNanos(1)))
-            .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.plusSeconds(3599)))
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, null, true))
             .isInstanceOf(IllegalArgumentException.class);
 
-        service.getBalanceFull(now, now.plusSeconds(3600));
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now, true))
+            .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.minusNanos(1), true))
+            .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.plusNanos(1), true))
+            .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> service.getBalanceFull(now, now.plusSeconds(3599), true))
+            .isInstanceOf(IllegalArgumentException.class);
+
+        service.getBalanceFull(now, now.plusSeconds(3600),true);
     }
 
     private void assertSyncAndAsyncBalances(Instant from, Instant to,

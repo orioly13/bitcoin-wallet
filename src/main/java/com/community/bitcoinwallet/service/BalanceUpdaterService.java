@@ -80,9 +80,9 @@ public class BalanceUpdaterService {
             ranges.add(new Range(start, start.plus(wholeHours % threadCount, ChronoUnit.HOURS)));
         }
         if (parallel) {
-            processRangesSequentially(ranges);
-        } else {
             processRangesInParallel(ranges);
+        } else {
+            processRangesSequentially(ranges);
         }
     }
 
@@ -140,9 +140,9 @@ public class BalanceUpdaterService {
     }
 
     private void shutDown(ExecutorService service) {
-        service.shutdown();
         try {
-            if (!service.awaitTermination(60, TimeUnit.SECONDS)) {
+            service.shutdown();
+            if (!service.awaitTermination(5, TimeUnit.SECONDS)) {
                 log.warn("Failed to shutdown gracefully");
                 service.shutdownNow();
             }

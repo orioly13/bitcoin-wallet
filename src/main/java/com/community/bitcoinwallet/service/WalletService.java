@@ -27,18 +27,10 @@ public class WalletService {
         repository.addEntry(entry);
     }
 
-    public List<WalletEntry> getBalanceFull(Instant from, Instant to) {
-        return getBalanceFull(from, to, true);
-    }
-
     public List<WalletEntry> getBalanceFull(Instant from, Instant to, boolean sync) {
         validateInstants(from, to);
         return fillMissingStartOfHours(getBalancesWithHoles(from, to, sync),
             atEndOfHour(from), atStartOfHour(to));
-    }
-
-    public List<WalletEntry> getBalancesWithHoles(Instant from, Instant to) {
-        return getBalancesWithHoles(from, to, true);
     }
 
     public List<WalletEntry> getBalancesWithHoles(Instant from, Instant to, boolean sync) {
