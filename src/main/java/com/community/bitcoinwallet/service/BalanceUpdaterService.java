@@ -17,9 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.community.bitcoinwallet.util.DateAndAmountUtils.atStartOfHour;
 
@@ -32,6 +30,7 @@ public class BalanceUpdaterService {
     WalletService walletService;
     ScheduledExecutorService updateBalanceTaskScheduler;
     ExecutorService parallelBalanceUpdateExecutor;
+    CompletionService<Void> completionService;
     int threadCount;
 
 
@@ -44,6 +43,7 @@ public class BalanceUpdaterService {
         this.updateBalanceTaskScheduler = updateBalanceTaskSheduler;
         this.parallelBalanceUpdateExecutor = parallelBalanceUpdateExecutor;
         this.threadCount = threadCount;
+        this.completionService = new ExecutorCompletionService<>(parallelBalanceUpdateExecutor);
         updateBalanceTaskSheduler.scheduleAtFixedRate(() -> updateBalances(true),
             scheduledUpdatePeriodMillis, scheduledUpdatePeriodMillis, TimeUnit.MILLISECONDS);
     }
@@ -60,7 +60,6 @@ public class BalanceUpdaterService {
             return;
         }
         WalletEntry event = firstEventAndClearQueue.get();
-        // 2)
         Instant from = atStartOfHour(event.getDatetime());
         Instant to = repository.getLastBalanceTs()
             .map(DateAndAmountUtils::atEndOfHour)
@@ -80,13 +79,38 @@ public class BalanceUpdaterService {
         if (wholeHours > threadCount && wholeHours % threadCount > 1) {
             ranges.add(new Range(start, start.plus(wholeHours % threadCount, ChronoUnit.HOURS)));
         }
-        processRangesSequentially(ranges);
+        if (parallel) {
+            processRangesSequentially(ranges);
+        } else {
+            processRangesInParallel(ranges);
+        }
     }
 
     private void processRangesSequentially(List<Range> ranges) {
         for (int i = 0; i < ranges.size(); i++) {
             repository.mergeIntoBalances(
                 getBalancesToMerge(ranges.get(i).fromExclusive, ranges.get(i).toInclusive, i == 0));
+        }
+    }
+
+    private void processRangesInParallel(List<Range> ranges) {
+
+        List<Future<?>> futures = new ArrayList<>(ranges.size());
+        for (int i = 0; i < ranges.size(); i++) {
+            Instant fromExclusive = ranges.get(i).fromExclusive;
+            Instant toInclusive = ranges.get(i).toInclusive;
+            boolean addNewBalance = i == 0;
+            futures.add(parallelBalanceUpdateExecutor.submit(() ->
+                repository.mergeIntoBalances(
+                    getBalancesToMerge(fromExclusive, toInclusive, addNewBalance))));
+        }
+        int finished = 0;
+        while (finished < futures.size()) {
+            try {
+                completionService.take();
+            } catch (Exception e) {
+                log.error("Problem occurred on balance update", e);
+            }
         }
     }
 
