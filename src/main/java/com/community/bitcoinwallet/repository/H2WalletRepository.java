@@ -46,12 +46,35 @@ public class H2WalletRepository implements WalletRepository {
     private static final String BALANCE = "BALANCE";
     private static final String BALANCE_QUEUE = "BALANCE_UPDATE_QUEUE";
 
+    // general requests
     private static final String TS_AT_START_OF_HOUR =
         "FORMATDATETIME(DATEADD('MILLISECOND', ts, DATE '1970-01-01'),'YYYY-MM-dd HH:00:00+00:00')";
+    private static final String INSERT = "insert into %s(ts,bitcoins) " +
+        " values(:ts, :bitcoins)";
+    private static final String CLEAR = "delete from %s where 1=1";
 
+    // sync requests
+    private static final String SELECT_BALANCE_SUM = "select SUM(bitcoins) as bitcoins from WALLET " +
+        "where ts < :ts " +
+        "group by 1";
+    private static final String SELECT_BALANCE_SUM_IN_RANGE = "select " +
+        TS_AT_START_OF_HOUR + " as date_hour, SUM(bitcoins) as bitcoins from WALLET " +
+        "where ts >= :from and ts < :to " +
+        " group by " + TS_AT_START_OF_HOUR +
+        " oreder by " + TS_AT_START_OF_HOUR;
+
+    // async requests
+    private static final String SELECT_NEXT_FROM_QUEUE = "select ts,bitcoins from BALANCE_UPDATE_QUEUE " +
+        "order by ts " +
+        "limit 1";
+    private static final String SELECT_ID_FROM_QUEUE = "select id from BALANCE_UPDATE_QUEUE " +
+        "order by ts " +
+        "limit 1";
+    private static final String DELETE_FROM_QUEUE = "delete from BALANCE_UPDATE_QUEUE where id=:id";
+
+    private static final String COUNT_BALANCES = "select count(*) c from BALANCE";
     private static final String SELECT_BALANCE_TIME_RANGE = "select ts,bitcoins from BALANCE " +
         "where (ts > :from and ts < :to) or ts = :to";
-    private static final String COUNT_BALANCES = "select count(*) c from BALANCE";
     private static final String SELECT_BALANCES_FOR_UPDATE = "select ts,bitcoins from BALANCE " +
         "where (ts > :from) limit :limit";
     private static final String SELECT_MAX_BALANCE_BEFORE_TIME_RANGE = "select ts,bitcoins from BALANCE " +
@@ -65,29 +88,10 @@ public class H2WalletRepository implements WalletRepository {
         "order by ts " +
         "limit 1";
 
-    private static final String SELECT_BALANCE_SUM = "select SUM(bitcoins) as bitcoins from WALLET " +
-        "where ts < :ts " +
-        "group by 1";
-
-    private static final String SELECT_BALANCE_SUM_IN_RANGE = "select " +
-        TS_AT_START_OF_HOUR + " as date_hour, SUM(bitcoins) as bitcoins from WALLET " +
-        "where ts >= :from and ts < :to " +
-        " group by " + TS_AT_START_OF_HOUR;
 
     private static final String UPDATE_BALANCE = "update BALANCE set bitcoins=:bitcoins where" +
         " ts=:ts";
 
-    private static final String SELECT_NEXT_FROM_QUEUE = "select ts,bitcoins from BALANCE_UPDATE_QUEUE " +
-        "order by ts " +
-        "limit 1";
-    private static final String SELECT_ID_FROM_QUEUE = "select id from BALANCE_UPDATE_QUEUE " +
-        "order by ts " +
-        "limit 1";
-    private static final String DELETE_FROM_QUEUE = "delete from BALANCE_UPDATE_QUEUE where id=:id";
-
-    private static final String INSERT = "insert into %s(ts,bitcoins) " +
-        " values(:ts, :bitcoins)";
-    private static final String CLEAR = "delete from %s where 1=1";
 
     boolean asyncBalanceCalculation;
     NamedParameterJdbcTemplate jdbcTemplate;
@@ -183,7 +187,7 @@ public class H2WalletRepository implements WalletRepository {
     }
 
     @Transactional
-    private void updateBalancesFromQueue() {
+    protected void updateBalancesFromQueue() {
         List<WalletEntry> res = jdbcTemplate.query(SELECT_NEXT_FROM_QUEUE,
             Collections.emptyMap(), ROW_MAPPER);
         if (!res.isEmpty()) {

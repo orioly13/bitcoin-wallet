@@ -43,10 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @AutoConfigureMockMvc
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {BitcoinWalletApplication.class},
-    properties = {"spring.profiles.active=h2","bitcoin-wallet.balance.async-balance=false"})
 @Transactional
-class WalletControllerTest {
+abstract class WalletControllerTest {
     private final static String ENTRY = "/api/wallet/add-entry";
     private final static String BALANCE = "/api/wallet/balance";
 

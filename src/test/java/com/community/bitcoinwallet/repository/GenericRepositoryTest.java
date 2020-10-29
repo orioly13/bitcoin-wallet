@@ -7,22 +7,27 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
+
+@RunWith(SpringRunner.class)
+@Transactional
 public abstract class GenericRepositoryTest {
 
+    @Autowired
     private WalletRepository repository;
 
     @BeforeEach
     public void setUpRepository() {
-        repository = getRepository();
         repository.clear();
     }
-
-    public abstract WalletRepository getRepository();
 
     @Test
     public void shouldAddEntriesAndReturnBalances() {
