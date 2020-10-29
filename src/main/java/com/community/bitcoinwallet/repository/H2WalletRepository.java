@@ -61,7 +61,7 @@ public class H2WalletRepository implements WalletRepository {
         TS_AT_START_OF_HOUR + " as date_hour, SUM(bitcoins) as bitcoins from WALLET " +
         "where ts >= :from and ts < :to " +
         " group by " + TS_AT_START_OF_HOUR +
-        " oreder by " + TS_AT_START_OF_HOUR;
+        " order by date_hour";
 
     // async requests
     private static final String SELECT_NEXT_FROM_QUEUE = "select ts,bitcoins from BALANCE_UPDATE_QUEUE " +
