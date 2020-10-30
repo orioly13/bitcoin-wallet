@@ -11,14 +11,9 @@ import java.time.Instant;
 @Data
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class WalletEntry implements Comparable<WalletEntry> {
+public class WalletEntry {
     Instant datetime;
     BigDecimal amount;
-
-    @Override
-    public int compareTo(WalletEntry o) {
-        return datetime.compareTo(o.datetime);
-    }
 
     @Override
     public String toString() {

@@ -39,14 +39,16 @@ public class WalletController extends AbstractController {
 
     @PostMapping(value = "/balance", consumes = "application/json", produces = "application/json")
     @ResponseBody
-    public List<WalletEntryResponse> getBalance(@RequestBody BalanceRequest balanceRequest) {
+    public List<WalletEntryResponse> getBalance(@RequestBody BalanceRequest balanceRequest,
+                                                @RequestParam(defaultValue = "true") boolean sync) {
         if (balanceRequest == null || balanceRequest.getFrom() == null ||
             balanceRequest.getTo() == null) {
             throw new IllegalArgumentException("Request should not have null fields");
         }
-        List<WalletEntry> entries = walletService.getBalance(
+        List<WalletEntry> entries = walletService.getBalanceFull(
             balanceRequest.getFrom().toInstant(),
-            balanceRequest.getTo().toInstant());
+            balanceRequest.getTo().toInstant(),
+            sync);
         return entries.stream().map(walletEntry ->
             new WalletEntryResponse(
                 DateAndAmountUtils.toUTCZonedDate(walletEntry.getDatetime()),
